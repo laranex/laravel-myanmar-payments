@@ -1,0 +1,55 @@
+{
+    "name": "laranex/laravel-myanmar-payments",
+    "description": "A Laravel package to deal with Payment Providers from Myanmar",
+    "keywords": [
+        "laranex",
+        "laravel-myanmar-payments",
+        "laravel-wave-money",
+        "laravel-2c2p"
+    ],
+    "homepage": "https://github.com/laranex/laravel-myanmar-payments",
+    "license": "MIT",
+    "type": "library",
+    "authors": [
+        {
+            "name": "Nay Thu Khant",
+            "email": "naythukhant644@gmail.com",
+            "role": "Developer"
+        }
+    ],
+    "require": {
+        "php": "^7.4|^8.0"
+    },
+    "require-dev": {
+        "orchestra/testbench": "^6.0",
+        "phpunit/phpunit": "^9.0"
+    },
+    "autoload": {
+        "psr-4": {
+            "Laranex\\LaravelMyanmarPayments\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Laranex\\LaravelMyanmarPayments\\Tests\\": "tests"
+        }
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit",
+        "test-coverage": "vendor/bin/phpunit --coverage-html coverage"
+
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "extra": {
+        "laravel": {
+            "providers": [
+                "Laranex\\LaravelMyanmarPayments\\LaravelMyanmarPaymentsServiceProvider"
+            ],
+            "aliases": {
+                "LaravelMyanmarPayments": "Laranex\\LaravelMyanmarPayments\\LaravelMyanmarPaymentsFacade"
+            }
+        }
+    }
+}
