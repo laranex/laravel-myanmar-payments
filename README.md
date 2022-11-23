@@ -27,19 +27,25 @@ composer require laranex/laravel-myanmar-payments
 [Wave Money Configuration](https://github.com/DigitalMoneyMyanmar/wppg-documentation#23-environment)
 [2c2P Configuration](https://developer.2c2p.com/docs/redirect-api-integrate-with-payment)
 
-## Usage (Wave Money Payment Screen)
+##Usage
 
 ```php
 use Laranex\LaravelMyanmarPayments\LaravelMyanmarPaymentsFacade;
 
+
+
+#Wave Money Payment Screen
 LaravelMyanmarPaymentsFacade::channel('wave_money')
         ->getPaymentScreenUrl($items, $orderId, $amount, $merchantReferenceId, $backendResultUrl, $frontendResultUrl, $paymentDescription);
+        
+#2c2p Payment Screen
 LaravelMyanmarPaymentsFacade::channel('2c2p')
         ->getPaymentScreenUrl($orderId, $amount, $noneStr, $backendResultUrl,$currencyCode, $frontendResultUrl, $paymentDescription)
+#2c2p Parse Response Payload to BackendUrl
+Laranex\LaravelMyanmarPayments\LaravelMyanmarPaymentsFacade::channel('2c2p')
+        ->parseJWT('jwtTokenFrom2c2cServer');
 
-/*
- * $frontendResultUrl & $paymentDescription are optional and the rest are mandatory.
- */
+#$frontendResultUrl & $paymentDescription are optional and the rest are mandatory.
 ```
 
 For more api options, you can read the composition of the

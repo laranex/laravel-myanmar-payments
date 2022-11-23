@@ -4,6 +4,7 @@ namespace Laranex\LaravelMyanmarPayments;
 
 use Exception;
 use Firebase\JWT\JWT;
+use Firebase\JWT\Key;
 use Illuminate\Support\Facades\Http;
 
 
@@ -144,5 +145,11 @@ class TwoCTwoP
         if (!filter_var($backendResultUrl, FILTER_VALIDATE_URL)) {
             throw  new Exception("Invalid backend URL, Be careful, this might lead to wrong data");
         }
+    }
+
+    public static function parseJWT(string $jwtToken): array
+    {
+        $secretKey = config("laravel-myanmar-payments.2c2p.secret_key");
+        return (array) JWT::decode($jwtToken, new Key($secretKey, 'HS256'));
     }
 }
