@@ -6,3 +6,7 @@ All notable changes to `laravel-myanmar-payments` will be documented in this fil
 
 - initial release
 - Wave Money and 2c2p are provided
+
+## 1.0.1
+
+- JWT Token parser added for 2c2p 
