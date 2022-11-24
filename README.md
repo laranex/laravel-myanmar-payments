@@ -37,7 +37,11 @@ use Laranex\LaravelMyanmarPayments\LaravelMyanmarPaymentsFacade;
 #Wave Money Payment Screen
 LaravelMyanmarPaymentsFacade::channel('wave_money')
         ->getPaymentScreenUrl($items, $orderId, $amount, $merchantReferenceId, $backendResultUrl, $frontendResultUrl, $paymentDescription);
-        
+#Wave Money Validate Response Signature
+Laranex\LaravelMyanmarPayments\LaravelMyanmarPaymentsFacade::channel("wave_money")
+    ->verifyWaveSignature($request);   
+   
+      
 #2c2p Payment Screen
 LaravelMyanmarPaymentsFacade::channel('2c2p')
         ->getPaymentScreenUrl($orderId, $amount, $noneStr, $backendResultUrl,$currencyCode, $frontendResultUrl, $paymentDescription)
