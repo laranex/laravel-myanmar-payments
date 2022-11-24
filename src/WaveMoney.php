@@ -4,6 +4,7 @@ namespace Laranex\LaravelMyanmarPayments;
 
 use Exception;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Request;
 
 class WaveMoney
 {
@@ -21,7 +22,7 @@ class WaveMoney
         $secretKey = $waveMoneyConfig["secret_key"];
 
         $frontendResultUrl = $frontendResultUrl ?: config("app.url");
-        $paymentDescription = $paymentDescription ?: "Payment for ". config("app.name");
+        $paymentDescription = $paymentDescription ?: "Payment for " . config("app.name");
 
         $this->validateData($items, $amount, $backendResultUrl, $secretKey, $merchantId);
 
@@ -59,7 +60,7 @@ class WaveMoney
     private function validateData($items, $amount, $backendResultUrl, $secretKey, $merchantId): void
     {
 
-        if (!$secretKey || !$merchantId){
+        if (!$secretKey || !$merchantId) {
             throw new Exception("Invalid Wave Money Secret Key OR Invalid Wave Merchant Id");
         }
 
@@ -86,6 +87,38 @@ class WaveMoney
         if (!filter_var($backendResultUrl, FILTER_VALIDATE_URL)) {
             throw  new Exception("Invalid backend URL, Be careful, this might lead to wrong data");
         }
+    }
+
+    public function verifyWaveSignature(Request $request): bool
+    {
+
+        $secretKey = config("laravel-myanmar-payments.wave_money.secret_key");
+
+        return hash_hmac('sha256', implode("", [
+
+                $request->get("status"),
+
+                $request->get("timeToLiveSeconds"),
+
+                $request->get("merchantId"),
+
+                $request->get("orderId"),
+
+                $request->get("amount"),
+
+                $request->get("backendResultUrl"),
+
+                $request->get("merchantReferenceId"),
+
+                $request->get("initiatorMsisdn"),
+
+                $request->get("transactionId"),
+
+                $request->get("paymentRequestId"),
+
+                $request->get("requestTime"),
+
+            ]), $secretKey) === $request->get("hashValue");
     }
 
 }
