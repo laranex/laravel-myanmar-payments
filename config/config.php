@@ -16,7 +16,21 @@ return [
     "2c2p" => [
         "base_url" => env("2C2P_BASE_URL", "https://sandbox-pgw.2c2p.com/payment/4.1"),
         "merchant_id" => env("2C2P_MERCHANT_ID"),
-        "secret_key" => env("2C2P_SECRET_KEY"),
-        "currency_code" => env("2C2P_CURRENCY_CODE"),
+        "merchants" => [
+
+            "default" => "MMK",
+
+            "MMK" => [
+                "secret_key" => env("2C2P_MMK_SECRET_KEY"),
+                "merchant_id" => env("2C2P_MMK_MERCHANT_ID"),
+                "currency_code" => "MMK"
+            ],
+
+            "USD" => [
+                "secret_key" => env("2C2P_USD_SECRET_KEY"),
+                "merchant_id" => env("2C2P_USD_MERCHANT_ID"),
+                "currency_code" => "USD"
+            ]
+        ]
     ]
 ];

@@ -13,13 +13,17 @@ class TwoCTwoP
     /**
      * @throws Exception
      */
-    public function getPaymentScreenUrl(string $orderId, int $amount, string $nonceStr, string $backendResultUrl, string $currencyCode, string $frontendResultUrl = "", string $paymentDescription = ""): string
+    public function getPaymentScreenUrl(string $orderId, int $amount, string $nonceStr, string $backendResultUrl, string $currencyCode = "", string $frontendResultUrl = "", string $paymentDescription = "", array $userDefined = []): string
     {
-        $config2c2p = config("laravel-myanmar-payments.2c2p");
+        $config = config("laravel-myanmar-payments.2c2p");
+        $merchantConfig = $config["merchants"];
 
-        $baseUrl = $config2c2p["base_url"];
-        $merchantId = $config2c2p["merchant_id"];
-        $secretKey = $config2c2p["secret_key"];
+        $currencyCode = $currencyCode ?? $merchantConfig["default"];
+
+        $baseUrl = $config["base_url"];
+
+        $merchantId = $merchantConfig[$currencyCode]["merchant_id"];
+        $secretKey = $merchantConfig[$currencyCode]["secret_key"];
 
         $paymentDescription = $paymentDescription ?: "Payment for " . config("app.name");
         $amount = sprintf("%012d", $amount);
@@ -42,11 +46,6 @@ class TwoCTwoP
         $chargeNextDate = "";
         $chargeOnDate = "";
         $paymentExpiry = "";
-        $userDefined1 = "";
-        $userDefined2 = "";
-        $userDefined3 = "";
-        $userDefined4 = "";
-        $userDefined5 = "";
         $paymentRouteID = "";
         $statementDescriptor = "";
         $subMerchants = "";
@@ -54,6 +53,7 @@ class TwoCTwoP
         $frontendReturnUrl = $frontendResultUrl ?: config("app.url");
         $backendReturnUrl = $backendResultUrl;
 
+        $userDefined = Helper::parseUserDefinedFields($userDefined);
 
         $payload = [
             //MANDATORY PARAMS
@@ -83,11 +83,12 @@ class TwoCTwoP
             "chargeNextDate" => $chargeNextDate,
             "chargeOnDate" => $chargeOnDate,
             "paymentExpiry" => $paymentExpiry,
-            "userDefined1" => $userDefined1,
-            "userDefined2" => $userDefined2,
-            "userDefined3" => $userDefined3,
-            "userDefined4" => $userDefined4,
-            "userDefined5" => $userDefined5,
+            "userDefined1" => $userDefined[0],
+            "userDefined2" => $userDefined[1],
+            "userDefined3" => $userDefined[2],
+            "userDefined4" => $userDefined[3],
+            "userDefined5" => $userDefined[4],
+            "userDefined6" => ["helloworld"],
             "paymentRouteID" => $paymentRouteID,
             "statementDescriptor" => $statementDescriptor,
             "subMerchants" => $subMerchants,
@@ -147,9 +148,13 @@ class TwoCTwoP
         }
     }
 
-    public static function parseJWT(string $jwtToken): array
+    public static function parseJWT(string $jwtToken, string $currencyCode): array
     {
-        $secretKey = config("laravel-myanmar-payments.2c2p.secret_key");
+        if(!collect(config("laravel-myanmar-payments.2c2p.merchants"))->except("default")->keys()->contains($currencyCode)) {
+            throw new Exception("Provide currency code is not defined in config");
+        }
+
+        $secretKey = config("laravel-myanmar-payments.2c2p.merchants.$currencyCode.secret_key");
         return (array) JWT::decode($jwtToken, new Key($secretKey, 'HS256'));
     }
 }

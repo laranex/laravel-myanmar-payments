@@ -44,10 +44,10 @@ Laranex\LaravelMyanmarPayments\LaravelMyanmarPaymentsFacade::channel("wave_money
       
 #2c2p Payment Screen
 LaravelMyanmarPaymentsFacade::channel('2c2p')
-        ->getPaymentScreenUrl($orderId, $amount, $noneStr, $backendResultUrl,$currencyCode, $frontendResultUrl, $paymentDescription)
+        ->getPaymentScreenUrl($orderId, $amount, $noneStr, $backendResultUrl,$currencyCode, $frontendResultUrl, $paymentDescription, $userDefined)
 #2c2p Parse Response Payload to BackendUrl
 Laranex\LaravelMyanmarPayments\LaravelMyanmarPaymentsFacade::channel('2c2p')
-        ->parseJWT('jwtTokenFrom2c2cServer');
+->parseJWT('jwtTokenFrom2c2cServer', $currencyCode);
 
 #$frontendResultUrl & $paymentDescription are optional and the rest are mandatory.
 ```
