@@ -91,10 +91,9 @@ class WaveMoney
 
     public function verifyWaveSignature(Request $request): bool
     {
-
         $secretKey = config("laravel-myanmar-payments.wave_money.secret_key");
 
-        return hash_hmac('sha256', implode("", [
+        return $request->get("status") === "COMPLETED" && hash_hmac('sha256', implode("", [
 
                 $request->get("status"),
 
