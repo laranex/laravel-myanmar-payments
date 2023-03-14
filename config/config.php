@@ -15,7 +15,6 @@ return [
     ],
     "2c2p" => [
         "base_url" => env("2C2P_BASE_URL", "https://sandbox-pgw.2c2p.com/payment/4.1"),
-        "merchant_id" => env("2C2P_MERCHANT_ID"),
         "merchants" => [
 
             "default" => "MMK",
