@@ -77,3 +77,8 @@ If you discover any security related issues, please email naythukhant644@gmail.c
 ## License
 
 The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
+
+
+## Stargazers over time
+[![Stargazers over time](https://starchart.cc/laranex/laravel-myanmar-payments.svg)](https://starchart.cc/laranex/laravel-myanmar-payments)
+
