@@ -71,6 +71,8 @@ If you discover any security related issues, please email naythukhant644@gmail.c
 ## Credits
 
 - [Nay Thu Khant](https://github.com/naythukhant)
+- [Thin Aung](https://github.com/makgsoewar)
+
 
 ## License
 
