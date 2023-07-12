@@ -13,7 +13,7 @@ class TwoCTwoP
     /**
      * @throws Exception
      */
-    public function getPaymentScreenUrl(string $orderId, int $amount, string $nonceStr, string $backendResultUrl, string $currencyCode = "", string $frontendResultUrl = "", string $paymentDescription = "", array $userDefined = []): string
+    public function getPaymentScreenUrl(string $orderId,$amount, string $nonceStr, string $backendResultUrl, string $currencyCode = "", string $frontendResultUrl = "", string $paymentDescription = "", array $userDefined = []): string
     {
         $config = config("laravel-myanmar-payments.2c2p");
         $merchantConfig = $config["merchants"];
@@ -26,7 +26,6 @@ class TwoCTwoP
         $secretKey = $merchantConfig[$currencyCode]["secret_key"];
 
         $paymentDescription = $paymentDescription ?: "Payment for " . config("app.name");
-        $amount = sprintf("%012d", $amount);
 
         $paymentChannel = "";
         $promotion = "";
@@ -88,7 +87,6 @@ class TwoCTwoP
             "userDefined3" => $userDefined[2],
             "userDefined4" => $userDefined[3],
             "userDefined5" => $userDefined[4],
-            "userDefined6" => ["helloworld"],
             "paymentRouteID" => $paymentRouteID,
             "statementDescriptor" => $statementDescriptor,
             "subMerchants" => $subMerchants,
@@ -102,7 +100,7 @@ class TwoCTwoP
 
         $payload = array_filter($payload);
 
-        $this->validateData($amount, $backendResultUrl, $secretKey, $merchantId, $currencyCode);
+        $this->validateData($backendResultUrl, $secretKey, $merchantId, $currencyCode);
 
         $jwt = JWT::encode($payload, $secretKey, 'HS256');
 
@@ -129,14 +127,10 @@ class TwoCTwoP
     /**
      * @throws Exception
      */
-    private function validateData($amount, $backendResultUrl, $secretKey, $merchantId, $currencyCode): void
+    private function validateData($backendResultUrl, $secretKey, $merchantId, $currencyCode): void
     {
         if (!$secretKey || !$merchantId) {
             throw new Exception("Invalid 2C2P Secret Key OR Invalid 2C2P Merchant Id");
-        }
-
-        if (strlen($amount) != 12) {
-            throw new Exception("Amount format is not the same with 2C2P requirement");
         }
 
         if (!$currencyCode) {

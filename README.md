@@ -27,7 +27,7 @@ composer require laranex/laravel-myanmar-payments
 [Wave Money Configuration](https://github.com/DigitalMoneyMyanmar/wppg-documentation#23-environment)
 [2c2P Configuration](https://developer.2c2p.com/docs/redirect-api-integrate-with-payment)
 
-##Usage
+## Usage
 
 ```php
 use Laranex\LaravelMyanmarPayments\LaravelMyanmarPaymentsFacade;
