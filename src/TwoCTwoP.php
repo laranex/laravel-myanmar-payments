@@ -6,6 +6,7 @@ use Exception;
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Http\Request;
 
 
 class TwoCTwoP
@@ -150,5 +151,15 @@ class TwoCTwoP
 
         $secretKey = config("laravel-myanmar-payments.2c2p.merchants.$currencyCode.secret_key");
         return (array) JWT::decode($jwtToken, new Key($secretKey, 'HS256'));
+    }
+
+    public function verifySignature(Request $request, string $currencyCode = "MMK"): bool
+    {
+        $secretKey = config("laravel-myanmar-payments.2c2p.merchants.{$currencyCode}.secret_key");
+
+        $decodedPayload = JWT::decode($request->payload, new Key($secretKey, 'HS256'));
+        $decoded_array = (array) $decodedPayload;
+
+        return "0000" == $decoded_array["respCode"];
     }
 }
