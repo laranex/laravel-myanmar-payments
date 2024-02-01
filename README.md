@@ -10,6 +10,16 @@ Supported Payments are as follows.
 - Wave Money
 - 2C2P
 
+### Workflows
+- Client App - Server Workflow
+<br>
+![Client App - Server Workflow](docs/ClientAppSerevrPGW.png)
+
+
+- Server Side only Workflow
+<br>
+![Server Side only Workflow](docs/ServerSideOnlyPGW.png)
+
 ## Installation
 
 You can install the package via composer:
