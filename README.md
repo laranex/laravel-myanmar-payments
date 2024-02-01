@@ -13,12 +13,11 @@ Supported Payments are as follows.
 ### Workflows
 - Client App - Server Workflow
 <br>
-![Client App - Server Workflow](docs/ClientAppSerevrPGW.png)
-
+<img src="docs/ClientAppServerPGW.png" alt="Client App - Server Workflow">
 
 - Server Side only Workflow
 <br>
-![Server Side only Workflow](docs/ServerSideOnlyPGW.png)
+<img src="docs/ServerSideOnlyPGW.png" alt="Server Side only Workflow">
 
 ## Installation
 
