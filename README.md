@@ -3,7 +3,7 @@
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/Laranex/laravel-myanmar-payments.svg?style=flat-square)](https://packagist.org/packages/Laranex/laravel-myanmar-payments)
 [![Total Downloads](https://img.shields.io/packagist/dt/Laranex/laravel-myanmar-payments.svg?style=flat-square)](https://packagist.org/packages/Laranex/laravel-myanmar-payments)
 
-A Laravel Package to deal with Payment Packages from Myanmar. This package can take care of redirect communications.
+A Laravel Package to deal with Payment Providers from Myanmar. This package can take care of PGW payments.
 
 Supported Payments are as follows.
 
