@@ -70,7 +70,7 @@ class KbzPayPwa
         throw new Exception("Something went wrong in requesting payment screen for KBZ Pay PWA with the status code of " . $response->status() . ". See more at https://wap.kbzpay.com/pgw/uat/api/#/en/docs/PWA/api-precreate-en");
     }
 
-    private function verifySignature(Request $request): bool
+    public function verifySignature(Request $request): bool
     {
         $request = collect($request->json()['Request']);
         $payload = $request->except(['sign', 'sign_type'])->sortKeys()->all();
