@@ -70,10 +70,11 @@ class KbzPayPwa
         throw new Exception("Something went wrong in requesting payment screen for KBZ Pay PWA with the status code of " . $response->status() . ". See more at https://wap.kbzpay.com/pgw/uat/api/#/en/docs/PWA/api-precreate-en");
     }
 
-    public function verifySignature(Request $request): bool {
+	public function verifySignature(Request $request): bool {
 		$payload = $request->json()->get('Request');
 		$payloadCollection = collect($payload);
 		$payloadWithoutSign = $payloadCollection->except(['sign', 'sign_type'])->sortKeys()->all();
 		$stringToHash = http_build_query($payloadWithoutSign) . "&key=" . config("laravel-myanmar-payments.kbz_pay.app_key");
 		return hash_equals(strtoupper(hash('SHA256', $stringToHash)), $payloadCollection->get('sign'));
 	}
+}
