@@ -72,6 +72,7 @@ class KbzPayPwa
 
 	public function verifySignature(Request $request): bool {
 		$payload = $request->json()->get('Request');
+        info($payload);
 		$payloadCollection = collect($payload);
 		$payloadWithoutSign = $payloadCollection->except(['sign', 'sign_type'])->sortKeys()->all();
 		$stringToHash = http_build_query($payloadWithoutSign) . "&key=" . config("laravel-myanmar-payments.kbz_pay.app_key");
