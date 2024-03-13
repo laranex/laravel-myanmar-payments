@@ -49,8 +49,7 @@ class WaveMoney
             $transactionId = $response->json()["transaction_id"];
             return "$baseUrl/authenticate?transaction_id=$transactionId";
         }
-
-        throw new Exception("Something went wrong in requesting payment screen for Wave Money");
+        throw new Exception("Something went wrong in requesting payment screen for Wave Money with the status code of " . $response->status(). ". See more at https://github.com/DigitalMoneyMyanmar/wppg-documentation?tab=readme-ov-file#response-code-and-message");
     }
 
 
