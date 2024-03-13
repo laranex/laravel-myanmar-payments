@@ -62,9 +62,11 @@ class KbzPayPwa
 
         if ($response->successful() && $response->json()['Response']['code'] === "0") {
             $response = $response->json()['Response'];
+
             $prePayId = $response['prepay_id'];
             $paymentScreenString = "appid=$appId&merch_code=$merchantCode&nonce_str=$nonceStr&prepay_id=$prePayId&timestamp=$timestamp&key=$appKey";
             $paymentScreenHash = strtoupper(hash('SHA256', $paymentScreenString));
+
             return "$pwaUrl/?appid=$appId&merch_code=$merchantCode&nonce_str=$nonceStr&prepay_id=$prePayId&timestamp=$timestamp&sign=$paymentScreenHash";
         }
         throw new Exception("Something went wrong in requesting payment screen for KBZ Pay PWA with the status code of " . $response->status() . ". See more at https://wap.kbzpay.com/pgw/uat/api/#/en/docs/PWA/api-precreate-en");
@@ -72,10 +74,11 @@ class KbzPayPwa
 
 	public function verifySignature(Request $request): bool {
 		$payload = $request->json()->get('Request');
-        info($payload);
 		$payloadCollection = collect($payload);
+
 		$payloadWithoutSign = $payloadCollection->except(['sign', 'sign_type'])->sortKeys()->all();
 		$stringToHash = http_build_query($payloadWithoutSign) . "&key=" . config("laravel-myanmar-payments.kbz_pay.app_key");
+
 		return hash_equals(strtoupper(hash('SHA256', $stringToHash)), $payloadCollection->get('sign'));
 	}
 }
