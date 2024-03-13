@@ -73,12 +73,11 @@ class KbzPayPwa
     }
 
 	public function verifySignature(Request $request): bool {
-		$payload = $request->json()->get('Request');
-		$payloadCollection = collect($payload);
+		$payload = $request->get('Request');
+        $sign = $payload['sign'];
+        $payload = collect($payload)->except(['sign', 'sign_type'])->sortKeys()->all();
+        $string = http_build_query($payload) . "&key=" . config("laravel-myanmar-payments.kbz_pay.app_key");
 
-		$payloadWithoutSign = $payloadCollection->except(['sign', 'sign_type'])->sortKeys()->all();
-		$stringToHash = http_build_query($payloadWithoutSign) . "&key=" . config("laravel-myanmar-payments.kbz_pay.app_key");
-
-		return hash_equals(strtoupper(hash('SHA256', $stringToHash)), $payloadCollection->get('sign'));
+        return hash_equals(strtoupper(hash('SHA256', $string)), $sign);
 	}
 }
