@@ -57,11 +57,17 @@ class KbzPay
         if ($response->successful() && $response->json()['Response']['code'] === "0") {
             $response = $response->json()['Response'];
 
-            $prePayId = $response['prepay_id'];
-            $paymentScreenString = "appid=$appId&merch_code=$merchantCode&nonce_str=$nonceStr&prepay_id=$prePayId&timestamp=$timestamp&key=$appKey";
-            $paymentScreenHash = strtoupper(hash('SHA256', $paymentScreenString));
+            switch ($tradeType) {
+                case "PWAAPP":
+                    $prePayId = $response['prepay_id'];
+                    $paymentScreenString = "appid=$appId&merch_code=$merchantCode&nonce_str=$nonceStr&prepay_id=$prePayId&timestamp=$timestamp&key=$appKey";
+                    $paymentScreenHash = strtoupper(hash('SHA256', $paymentScreenString));
+                    return "$pwaUrl/?appid=$appId&merch_code=$merchantCode&nonce_str=$nonceStr&prepay_id=$prePayId&timestamp=$timestamp&sign=$paymentScreenHash";
 
-            return "$pwaUrl/?appid=$appId&merch_code=$merchantCode&nonce_str=$nonceStr&prepay_id=$prePayId&timestamp=$timestamp&sign=$paymentScreenHash";
+                case "PAY_BY_QRCODE":
+                    return $response['qrCode'];
+                default: throw new Exception("Invalid trade type");
+            }
         }
         throw new Exception("Something went wrong in requesting payment screen for KBZ Pay PWA with the status code of " . $response->status() . ". See more at https://wap.kbzpay.com/pgw/uat/api/#/en/docs/PWA/api-precreate-en");
     }

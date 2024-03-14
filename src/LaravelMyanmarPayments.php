@@ -2,22 +2,21 @@
 
 namespace Laranex\LaravelMyanmarPayments;
 
+use Exception;
+
 class LaravelMyanmarPayments
 {
     /**
      * @throws \Exception
      */
-    public function channel($channel): WaveMoney | TwoCTwoP | KbzPayPwa
+    public function channel($channel): WaveMoney|TwoCTwoP|KbzPayPwa|KbzPayQr
     {
-        switch ($channel) {
-            case "wave_money":
-                return new WaveMoney();
-            case "2c2p":
-                return new TwoCTwoP();
-            case "kbz_pay.pwaapp":
-                return new KbzPayPwa();
-            default:
-                throw new \Exception("Unsupported Payment Channel");
-        }
+        return match ($channel) {
+            "wave_money" => new WaveMoney(),
+            "2c2p" => new TwoCTwoP(),
+            "kbz_pay.pwaapp" => new KbzPayPwa(),
+            "kbz_pay.qr" => new KbzPayQr(),
+            default => throw new Exception("Unsupported Payment Channel"),
+        };
     }
 }
