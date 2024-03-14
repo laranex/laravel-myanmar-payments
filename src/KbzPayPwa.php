@@ -3,10 +3,6 @@
 namespace Laranex\LaravelMyanmarPayments;
 
 use Exception;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Http;
-use Illuminate\Support\Str;
-
 class KbzPayPwa extends KbzPay
 {
     /**
