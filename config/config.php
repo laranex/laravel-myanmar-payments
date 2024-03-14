@@ -15,12 +15,13 @@ return [
     ],
     "kbz_pay" => [
         "base_url" => env("KBZ_PAY_BASE_URL", "http://api.kbzpay.com/payment/gateway/uat"),
-        "pwa_url" => env("KBZ_PAY_PWA_URL", "https://static.kbzpay.com/pgw/uat/pwa/#"),
         "merchant_name" => env("KBZ_PAY_MERCHANT_NAME", env("APP_NAME", "LARAVEL")),
         "merchant_code" => env("KBZ_PAY_MERCHANT_CODE"),
         "app_id" => env("KBZ_PAY_APP_ID"),
         "app_key" => env("KBZ_PAY_APP_KEY"),
-        "pwa" => [],
+        "pwa" => [
+            "base_redirect_url" => env("KBZ_PAY_PWA_BASE_REDIRECT_URL", "https://static.kbzpay.com/pgw/uat/pwa/#"),
+        ],
         "qr" => []
     ],
     "2c2p" => [

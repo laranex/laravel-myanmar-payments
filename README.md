@@ -35,6 +35,7 @@ composer require laranex/laravel-myanmar-payments
 
 [Wave Money Configuration](https://github.com/DigitalMoneyMyanmar/wppg-documentation#23-environment)
 [2c2P Configuration](https://developer.2c2p.com/docs/redirect-api-integrate-with-payment)
+[KBZ Pay Configuration](https://wap.kbzpay.com/pgw/uat/api/#/en/dashboard)
 
 ## Usage
 
@@ -42,28 +43,45 @@ composer require laranex/laravel-myanmar-payments
 use Laranex\LaravelMyanmarPayments\LaravelMyanmarPaymentsFacade;
 
 
-
-#Wave Money Payment Screen
+# WAVEMONEY
+# Payment Screen
 LaravelMyanmarPaymentsFacade::channel('wave_money')
-        ->getPaymentScreenUrl($items, $orderId, $amount, $merchantReferenceId, $backendResultUrl, $frontendResultUrl, $paymentDescription);
-#Wave Money Validate Response Signature
+    ->getPaymentScreenUrl($items, $orderId, $amount, $merchantReferenceId, $backendResultUrl, $frontendResultUrl, $paymentDescription)
+# Validate Response Signature
 Laranex\LaravelMyanmarPayments\LaravelMyanmarPaymentsFacade::channel("wave_money")
-    ->verifyWaveSignature($request);   
+    ->verifyWaveSignature($request)   
    
-      
-#2c2p Payment Screen
+   
+# 2C2P   
+# Payment Screen
 LaravelMyanmarPaymentsFacade::channel('2c2p')
-        ->getPaymentScreenUrl($orderId, $amount, $noneStr, $backendResultUrl,$currencyCode, $frontendResultUrl, $paymentDescription, $userDefined)
-#2c2p Parse Response Payload to BackendUrl
+    ->getPaymentScreenUrl($orderId, $amount, $noneStr, $backendResultUrl,$currencyCode, $frontendResultUrl, $paymentDescription, $userDefined)
+# Parse Response Payload
 Laranex\LaravelMyanmarPayments\LaravelMyanmarPaymentsFacade::channel('2c2p')
-->parseJWT('jwtTokenFrom2c2cServer', $currencyCode);
+->parseJWT('jwtTokenFrom2c2cServer', $currencyCode)
+# $frontendResultUrl & $paymentDescription are optional and the rest are mandatory.
 
-#$frontendResultUrl & $paymentDescription are optional and the rest are mandatory.
+
+#KBZ PAY
+# PWA URL
+LaravelMyanmarPaymentsFacade::channel("kbz_pay.pwaapp")
+    ->getPaymentScreenUrl($orderId, $amount, $noneStr,  $backendResultUrl)
+# QR Code
+LaravelMyanmarPaymentsFacade::channel("kbz_pay.qr")
+    ->getPaymentScreenUrl($orderId, $amount, $noneStr,  $backendResultUrl)
+    
+# Validate Response Signature
+LaravelMyanmarPaymentsFacade::channel("kbz_pay.qr")
+    verifySignature($request)
 ```
+
 
 For more api options, you can read the composition of the
 - Wave Money function [here](src/WaveMoney.php)
 - 2c2P [here](src/TwoCTwoP.php)
+- KBZ Pay 
+  - [PWA](src/KbzPayPwa.php)
+  - [QR](src/KbzPayQr.php)
 
 ### Changelog
 
