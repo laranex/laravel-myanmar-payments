@@ -65,10 +65,12 @@ Laranex\LaravelMyanmarPayments\LaravelMyanmarPaymentsFacade::channel('2c2p')
 #KBZ PAY
 # PWA URL
 LaravelMyanmarPaymentsFacade::channel("kbz_pay.pwaapp")
-    ->getPaymentScreenUrl($orderId, $amount, $noneStr,  $backendResultUrl)
+    ->getPaymentScreenUrl($orderId, $amount, $nonceStr,  $backendResultUrl)
 # QR Code
 LaravelMyanmarPaymentsFacade::channel("kbz_pay.qr")
-    ->getPaymentScreenUrl($orderId, $amount, $noneStr,  $backendResultUrl)
+    ->getPaymentScreenUrl($orderId, $amount, $nonceStr,  $backendResultUrl)
+    
+# $nonceStr should be at least 32 characters long, uppercase & numbers according to KbzPay Documentation
     
 # Validate Response Signature
 LaravelMyanmarPaymentsFacade::channel("kbz_pay.qr")

@@ -12,7 +12,7 @@ class KbzPay
     /**
      * @throws Exception
      */
-    protected function preCreate(string $tradeType, string $orderId, int $amount, string $nonceStr, string $backendResultUrl): string
+    protected function preCreate(string $tradeType, string $orderId, int $amount, string $nonceStr, string $backendResultUrl): string|array
     {
         $kbzPayConfig = config("laravel-myanmar-payments.kbz_pay");
         $baseUrl = $kbzPayConfig["base_url"];
@@ -22,7 +22,7 @@ class KbzPay
         $appKey = $kbzPayConfig["app_key"];
         $method = "kbz.payment.precreate";
 
-        $timestamp = (string) now()->timestamp;
+        $timestamp = (string)now()->timestamp;
         $tranCurrency = "MMK";
         $totalAmount = (string)$amount;
         $version = "1.0";
@@ -42,8 +42,8 @@ class KbzPay
         ]);
 
         $string = $collection->sortKeys()->map(function ($value, $key) {
-            return "$key=$value";
-        })->implode("&") . "&key=$appKey";
+                return "$key=$value";
+            })->implode("&") . "&key=$appKey";
         $hash = strtoupper(hash('SHA256', $string));
 
         $bizContent = [
@@ -68,7 +68,6 @@ class KbzPay
             ]
         ]);
 
-
         if ($response->successful() && $response->json()['Response']['code'] === "0") {
             $response = $response->json()['Response'];
 
@@ -82,6 +81,25 @@ class KbzPay
 
                 case "PAY_BY_QRCODE":
                     return $response['qrCode'];
+                case "APP":
+                    $collection = collect([
+                        "prepay_id" => $response["prepay_id"],
+                        "merch_code" => $merchantCode,
+                        "appid" => $appId,
+                        "timestamp" => $timestamp,
+                        "nonce_str" => $nonceStr,
+                    ]);
+
+                    $orderInfo = $collection->sortKeys()->map(function ($value, $key) {
+                        return "$key=$value";
+                    })->implode("&");
+
+                    return [
+                        "orderInfo" => $orderInfo,
+                        "sign" => strtoupper(hash('SHA256', $orderInfo . "&key=$appKey")),
+                        "signType" => "SHA256"
+                    ];
+
                 default:
                     throw new Exception("Invalid trade type");
             }
