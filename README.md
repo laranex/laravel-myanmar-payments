@@ -33,6 +33,13 @@ composer require laranex/laravel-myanmar-payments
   php artisan vendor:publish --tag="laravel-myanmar-payments"
 ```
 
+## Upgrade Guide
+
+- v1 -> v2
+    - Backup & Delete the existing config/laravel-myanmar-payments.php (if only published before)
+    - Publish the new config/laravel-myanmar-payments, and re-merge the old config/laravel-myanmar-payments.php
+    - Update .env (KBZ Pay is supported now)
+
 [Wave Money Configuration](https://github.com/DigitalMoneyMyanmar/wppg-documentation#23-environment)
 [2c2P Configuration](https://developer.2c2p.com/docs/redirect-api-integrate-with-payment)
 [KBZ Pay Configuration](https://wap.kbzpay.com/pgw/uat/api/#/en/dashboard)
@@ -49,10 +56,10 @@ LaravelMyanmarPaymentsFacade::channel('wave_money')
     ->getPaymentScreenUrl($items, $orderId, $amount, $merchantReferenceId, $backendResultUrl, $frontendResultUrl, $paymentDescription)
 # Validate Response Signature
 Laranex\LaravelMyanmarPayments\LaravelMyanmarPaymentsFacade::channel("wave_money")
-    ->verifyWaveSignature($request)   
-   
-   
-# 2C2P   
+    ->verifyWaveSignature($request)
+
+
+# 2C2P
 # Payment Screen
 LaravelMyanmarPaymentsFacade::channel('2c2p')
     ->getPaymentScreenUrl($orderId, $amount, $noneStr, $backendResultUrl,$currencyCode, $frontendResultUrl, $paymentDescription, $userDefined)
@@ -69,9 +76,9 @@ LaravelMyanmarPaymentsFacade::channel("kbz_pay.pwaapp")
 # QR Code
 LaravelMyanmarPaymentsFacade::channel("kbz_pay.qr")
     ->getPaymentScreenUrl($orderId, $amount, $nonceStr,  $backendResultUrl)
-    
+
 # $nonceStr should be at least 32 characters long, uppercase & numbers according to KbzPay Documentation
-    
+
 # Validate Response Signature
 LaravelMyanmarPaymentsFacade::channel("kbz_pay.qr")
     verifySignature($request)
@@ -81,7 +88,7 @@ LaravelMyanmarPaymentsFacade::channel("kbz_pay.qr")
 For more api options, you can read the composition of the
 - Wave Money function [here](src/WaveMoney.php)
 - 2c2P [here](src/TwoCTwoP.php)
-- KBZ Pay 
+- KBZ Pay
   - [PWA](src/KbzPayPwa.php)
   - [QR](src/KbzPayQr.php)
 
