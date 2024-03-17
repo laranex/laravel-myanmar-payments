@@ -77,6 +77,9 @@ LaravelMyanmarPaymentsFacade::channel("kbz_pay.pwaapp")
 LaravelMyanmarPaymentsFacade::channel("kbz_pay.qr")
     ->getPaymentScreenUrl($orderId, $amount, $nonceStr,  $backendResultUrl)
 
+# In App
+LaravelMyanmarPaymentsFacade::channel("kbz_pay.app")->getPaymentData($orderId, $amount, $nonceStr, $backendResultUrl);
+
 # $nonceStr should be at least 32 characters long, uppercase & numbers according to KbzPay Documentation
 
 # Validate Response Signature
@@ -104,17 +107,15 @@ Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
 
 If you discover any security related issues, please email naythukhant644@gmail.com instead of using the issue tracker.
 
-## Credits
+## Contributors
 
 - [Nay Thu Khant](https://github.com/naythukhant)
 - [Thin Aung](https://github.com/makgsoewar)
+- [Pai Soe Htike](https://github.com/paisoedev)
 
 
 ## License
 
 The MIT License (MIT). Please see [License File](LICENSE.md) for more information.
 
-
-## Stargazers over time
-[![Stargazers over time](https://starchart.cc/laranex/laravel-myanmar-payments.svg)](https://starchart.cc/laranex/laravel-myanmar-payments)
 
