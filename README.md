@@ -8,7 +8,13 @@ A Laravel Package to deal with Payment Providers from Myanmar. This package can 
 Supported Payments are as follows.
 
 - Wave Money
+    - PWA Payment
 - 2C2P
+    - PWA Payment
+- KBZ Pay (^2.0.0)
+    - PWA Payment
+    - QR Payment
+    - In App Payment
 
 ### Workflows
 - Client App - Server Workflow
@@ -91,6 +97,7 @@ For more api options, you can read the composition of the
 - KBZ Pay
   - [PWA](src/KbzPayPwa.php)
   - [QR](src/KbzPayQr.php)
+  - [InApp](src/KbzPayApp.php)
 
 ### Changelog
 
