@@ -94,6 +94,7 @@ For more api options, you can read the composition of the
 - KBZ Pay
   - [PWA](src/KbzPayPwa.php)
   - [QR](src/KbzPayQr.php)
+  - [InApp](src/KbzPayApp.php)
 
 ### Changelog
 
