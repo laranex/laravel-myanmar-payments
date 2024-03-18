@@ -41,9 +41,7 @@ class KbzPay
             "version" => $version,
         ]);
 
-        $string = $collection->sortKeys()->map(function ($value, $key) {
-                return "$key=$value";
-            })->implode("&") . "&key=$appKey";
+        $string = Helper::generateQueryString($collection, $appKey);
         $hash = strtoupper(hash('SHA256', $string));
 
         $bizContent = [
@@ -115,5 +113,64 @@ class KbzPay
         $string = http_build_query($payload) . "&key=" . config("laravel-myanmar-payments.kbz_pay.app_key");
 
         return hash_equals(strtoupper(hash('SHA256', $string)), $sign);
+    }
+
+    /**
+     * @throws Exception
+     */
+    public function queryOrder(string $orderId, string $nonceStr, string $refundRequestNo = null)
+    {
+        $kbzPayConfig = config("laravel-myanmar-payments.kbz_pay");
+        $baseUrl = $kbzPayConfig["base_url"];
+
+        $merchantCode = $kbzPayConfig["merchant_code"];
+        $appId = $kbzPayConfig["app_id"];
+        $appKey = $kbzPayConfig["app_key"];
+        $method = "kbz.payment.queryorder";
+
+        $timestamp = (string)now()->timestamp;
+        $version = "3.0";
+
+        $collection = collect([
+            "appid" => $appId,
+            "merch_code" => $merchantCode,
+            "merch_order_id" => $orderId,
+            "method" => $method,
+            "nonce_str" => $nonceStr,
+            "timestamp" => $timestamp,
+            "version" => $version
+        ]);
+        if ($refundRequestNo) {
+            $collection->put("refund_request_no", $refundRequestNo);
+        }
+
+        $string = Helper::generateQueryString($collection, $appKey);
+        $hash = strtoupper(hash('SHA256', $string));
+
+        $bizContent = [
+            "appid" => $appId,
+            "merch_code" => $merchantCode,
+            "merch_order_id" => $orderId
+        ];
+        if ($refundRequestNo) {
+            $bizContent["refund_request_no"] = $refundRequestNo;
+        }
+
+        $response = Http::post("$baseUrl/queryorder", [
+            "Request" => [
+                "timestamp" => $timestamp,
+                "method" => $method,
+                "nonce_str" => $nonceStr,
+                "sign_type" => "SHA256",
+                "sign" => $hash,
+                "version" => $version,
+                "biz_content" => $bizContent
+            ]
+        ]);
+
+        if ($response->successful() && $response->json()['Response']['code'] === "0") {
+            return $response->json()['Response'];
+        }
+        throw new Exception("Something went wrong in requesting order query for KBZ Pay with the status code of " . $response->status() . ". See more at https://wap.kbzpay.com/pgw/uat/api/#/en/docs/PWA/api-queryOrder-en");
     }
 }

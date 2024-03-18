@@ -19,4 +19,11 @@ class Helper{
 
         return $userDefined;
     }
+
+    public static function generateQueryString($collection, $appKey): string
+    {
+        return $collection->sortKeys()->map(function ($value, $key) {
+            return "$key=$value";
+        })->implode("&") . "&key=$appKey";
+    }
 }
