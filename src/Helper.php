@@ -2,6 +2,7 @@
 
 namespace Laranex\LaravelMyanmarPayments;
 use Exception;
+use Illuminate\Support\Collection;
 
 class Helper{
     /**
@@ -25,5 +26,17 @@ class Helper{
         return $collection->sortKeys()->map(function ($value, $key) {
             return "$key=$value";
         })->implode("&") . "&key=$appKey";
+    }
+
+    public static function signCyberSource(Collection $collection): string
+    {
+        $secret = config("laravel-myanmar-payments.cyber_source.secret_key");
+        $signedFieldNames = explode(",", $collection['signed_field_names']);
+        $dataToSign = [];
+        foreach ($signedFieldNames as $field) {
+           $dataToSign[] = $field . "=" . $collection[$field];
+        }
+        $singableString = implode(",", $dataToSign);
+        return base64_encode(hash_hmac('sha256', $singableString, $secret, true));
     }
 }
