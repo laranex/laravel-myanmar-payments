@@ -9,6 +9,8 @@ Supported Payments are as follows.
 
 - Wave Money
 - 2C2P
+- KBZPay
+- Cybersource
 
 ### Workflows
 - Client App - Server Workflow
@@ -85,6 +87,15 @@ LaravelMyanmarPaymentsFacade::channel("kbz_pay.app")->getPaymentData($orderId, $
 # Validate Response Signature
 LaravelMyanmarPaymentsFacade::channel("kbz_pay.qr")
     verifySignature($request)
+
+#Cybersource
+# Secure Acceptance
+LaravelMyanmarPaymentsFacade::channel("cyber_source.secure_acceptance")
+    ->getPaymentData($transactionId, $referenceNumber, $amount)
+    
+# Validate Request Signature
+LaravelMyanmarPaymentsFacade::channel("cyber_source.secure_acceptance")
+    ->verifySignature($request)
 ```
 
 
@@ -95,6 +106,8 @@ For more api options, you can read the composition of the
   - [PWA](src/KbzPayPwa.php)
   - [QR](src/KbzPayQr.php)
   - [InApp](src/KbzPayApp.php)
+- Cybersource 
+  - [Secure Acceptance](src/CyberSourceSecureAcceptance.php)
 
 ### Changelog
 
