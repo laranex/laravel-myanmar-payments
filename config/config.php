@@ -42,5 +42,11 @@ return [
                 "currency_code" => "USD"
             ]
         ]
+    ],
+    "cyber_source" => [
+        "base_url" => env("CYBER_SOURCE_BASE_URL", ""),
+        "profile_id" => env("CYBER_SOURCE_PROFILE_ID", ""),
+        "access_key" => env("CYBER_SOURCE_ACCESS_KEY", ""),
+        "secret_key" => env("CYBER_SOURCE_SECRET_KEY", "")
     ]
 ];
