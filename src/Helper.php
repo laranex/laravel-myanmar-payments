@@ -39,4 +39,11 @@ class Helper{
         $singableString = implode(",", $dataToSign);
         return base64_encode(hash_hmac('sha256', $singableString, $secret, true));
     }
+
+    public static function hashAyaPgw(array $data): string
+    {
+        $config = config("laravel-myanmar-payments.aya_pgw");
+        $hashString = collect($data)->values()->implode(":");
+        return hash_hmac('sha256', $hashString, $config["app_secret"]);
+    }
 }

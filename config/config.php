@@ -48,5 +48,10 @@ return [
         "profile_id" => env("CYBER_SOURCE_PROFILE_ID", ""),
         "access_key" => env("CYBER_SOURCE_ACCESS_KEY", ""),
         "secret_key" => env("CYBER_SOURCE_SECRET_KEY", "")
-    ]
+    ],
+    "aya_pgw" => [
+        "base_url" => env("AYA_PGW_BASE_URL", ""),
+        "app_key" => env("AYA_PGW_APP_KEY", ""),
+        "app_secret" => env("AYA_PGW_APP_SECRET", "")
+    ],
 ];

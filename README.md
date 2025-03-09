@@ -11,6 +11,7 @@ Supported Payments are as follows.
 - 2C2P
 - KBZPay
 - Cybersource
+- AYA Payment Gateway
 
 ### Workflows
 - Client App - Server Workflow
@@ -96,6 +97,21 @@ LaravelMyanmarPaymentsFacade::channel("cyber_source.secure_acceptance")
 # Validate Request Signature
 LaravelMyanmarPaymentsFacade::channel("cyber_source.secure_acceptance")
     ->verifySignature($request)
+
+
+# AYA Payment Gateway
+# Request available payment methods
+LaravelMyanmarPaymentsFacade::channel("aya_pgw")
+    ->getPaymentServices()
+# Payment Screen Payload
+LaravelMyanmarPaymentsFacade::channel("aya_pgw")
+    ->paymentRequest($orderId, $amount, $channel, $method, $currencyCode)
+# Enquiry Payment Status
+LaravelMyanmarPaymentsFacade::channel("aya_pgw")
+    ->paymentEnquiry($orderId)
+# Validate Response Payload Signature
+LaravelMyanmarPaymentsFacade::channel("aya_pgw")
+    ->verifySignature($payload, $checkSum)
 ```
 
 
@@ -108,6 +124,7 @@ For more api options, you can read the composition of the
   - [InApp](src/KbzPayApp.php)
 - Cybersource 
   - [Secure Acceptance](src/CyberSourceSecureAcceptance.php)
+- AYA Payment Gateway [here](src/AyaPgw.php)
 
 ### Changelog
 
