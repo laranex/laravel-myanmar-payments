@@ -31,7 +31,7 @@ class CyberSource
         ];
     }
 
-    protected function verifySignature(Request $request): bool
+    public function verifySignature(Request $request): bool
     {
         $payload = collect($request->all());
         $payloadSignature = Helper::signCyberSource($payload);
