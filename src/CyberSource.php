@@ -6,7 +6,7 @@ use Illuminate\Http\Request;
 
 class CyberSource
 {
-    protected function authorizePayment(string $transactionId, string $referenceNumber, int $amount, string $currencyCode = "MMK"): array
+    protected function processTransaction(string $transactionId, string $referenceNumber, int $amount, string $currencyCode = "MMK", string $transactionType = "sale"): array
     {
         $csConfig = config("laravel-myanmar-payments.cyber_source");
         $signedFiledNames = "access_key,profile_id,transaction_uuid,signed_field_names,signed_date_time,locale,transaction_type,reference_number,amount,currency";
@@ -17,7 +17,7 @@ class CyberSource
             "signed_field_names" => $signedFiledNames,
             "signed_date_time" => gmdate("Y-m-d\TH:i:s\Z"),
             "locale" => "en",
-            "transaction_type" => "authorization",
+            "transaction_type" => $transactionType,
             "reference_number" => $referenceNumber,
             "amount" => number_format((float) $amount, 2, ".", ""),
             "currency" => $currencyCode
