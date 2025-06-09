@@ -49,9 +49,8 @@ class WaveMoney
             $transactionId = $response->json()["transaction_id"];
             return "$baseUrl/authenticate?transaction_id=$transactionId";
         }
-        throw new Exception("Something went wrong in requesting payment screen for Wave Money with the status code of " . $response->status(). ". See more at https://github.com/DigitalMoneyMyanmar/wppg-documentation?tab=readme-ov-file#response-code-and-message");
+        throw new Exception("Something went wrong in requesting payment screen for Wave Money with the status code of " . $response->status() . ". See more at https://github.com/DigitalMoneyMyanmar/wppg-documentation?tab=readme-ov-file#response-code-and-message");
     }
-
 
     /**
      * @throws Exception
@@ -88,35 +87,40 @@ class WaveMoney
         }
     }
 
-    public function verifyWaveSignature(Request $request): bool
+    public function verifySignature(Request $request): bool
     {
         $secretKey = config("laravel-myanmar-payments.wave_money.secret_key");
 
         return $request->get("status") === "PAYMENT_CONFIRMED" && hash_hmac('sha256', implode("", [
 
-                $request->get("status"),
+            $request->get("status"),
 
-                $request->get("timeToLiveSeconds"),
+            $request->get("timeToLiveSeconds"),
 
-                $request->get("merchantId"),
+            $request->get("merchantId"),
 
-                $request->get("orderId"),
+            $request->get("orderId"),
 
-                $request->get("amount"),
+            $request->get("amount"),
 
-                $request->get("backendResultUrl"),
+            $request->get("backendResultUrl"),
 
-                $request->get("merchantReferenceId"),
+            $request->get("merchantReferenceId"),
 
-                $request->get("initiatorMsisdn"),
+            $request->get("initiatorMsisdn"),
 
-                $request->get("transactionId"),
+            $request->get("transactionId"),
 
-                $request->get("paymentRequestId"),
+            $request->get("paymentRequestId"),
 
-                $request->get("requestTime"),
+            $request->get("requestTime"),
 
-            ]), $secretKey) === $request->get("hashValue");
+        ]), $secretKey) === $request->get("hashValue");
     }
 
+    // TODO: Remove this method in the future, use verifySignature instead
+    public function verifyWaveSignature(Request $request): bool
+    {
+        return $this->verifySignature($request);
+    }
 }

@@ -12,7 +12,7 @@ class KbzPay
     /**
      * @throws Exception
      */
-    protected function preCreate(string $tradeType, string $orderId, string $amount, string $nonceStr, string $backendResultUrl): string|array
+    protected function preCreate(string $tradeType, string $orderId, float $amount, string $nonceStr, string $backendResultUrl): string|array
     {
         $kbzPayConfig = config("laravel-myanmar-payments.kbz_pay");
         $baseUrl = $kbzPayConfig["base_url"];

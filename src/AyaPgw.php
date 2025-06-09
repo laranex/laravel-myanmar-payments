@@ -35,7 +35,7 @@ class AyaPgw
         throw new Exception("Something went wrong in requesting payment services. Status code - {$response->status()}");
     }
 
-    public function paymentRequest(string $merchantOrderId, string $amount, string $channel, string $method, int $currencyCode = 104, string $description = "", string $overrideFrontendRedirectUrl = "", array $userRefs = []): array
+    public function paymentRequest(string $merchantOrderId, int $amount, string $channel, string $method, int $currencyCode = 104, string $description = "", string $overrideFrontendRedirectUrl = "", array $userRefs = []): array
     {
         $config = config("laravel-myanmar-payments.aya_pgw");
         $timestamp = now()->timestamp;
@@ -67,6 +67,8 @@ class AyaPgw
             "overrideFrontendRedirectUrl" => $overrideFrontendRedirectUrl,
         ];
 
+        $this->validateData($config["app_key"], $currencyCode, $amount, $channel, $method);
+
         $checkSum = Helper::hashAyaPgw($data);
         $data["checkSum"] = $checkSum;
         return [
@@ -75,13 +77,21 @@ class AyaPgw
         ];
     }
 
-    public function verifySignature(string $payload, string $checkSum): array|bool
+    public function verifySignature(Request $request): bool
     {
-        $payload = json_decode(base64_decode($payload), true);
-        $hash = Helper::hashAyaPgw($payload);
-        if ($hash === $checkSum) return $payload;
+        $payload = $this->decode($request);
+        $checkSum = $request->get("checkSum");
 
-        return false;
+        if (empty($payload)) {
+            throw new Exception("Invalid Payload");
+        }
+        $hash = Helper::hashAyaPgw($payload);
+        return $hash === $checkSum;
+    }
+
+    public function decode(Request $request): array
+    {
+        return json_decode(base64_decode($request->get("payload")));
     }
 
     public function paymentEnquiry(string $merchantOrderId): array
@@ -108,5 +118,31 @@ class AyaPgw
         }
 
         throw new Exception("Something went wrong in requesting payment enquiry. Status code - {$response->status()}");
+    }
+
+    /**
+     * @throws Exception
+     */
+    private function validateData($appKey, $currencyCode, $amount, $channel, $method): void
+    {
+        if (!$appKey) {
+            throw new Exception("Invalid AGP APP Key");
+        }
+
+        if (!$currencyCode) {
+            throw new Exception("Invalid Currency");
+        }
+        // When we sent two digit amount, AYA PGW will return error.
+        if (!$amount || (int) $amount > 100) {
+            throw new Exception("Invalid Amount");
+        }
+
+        if (!$channel) {
+            throw new Exception("Invalid Channel");
+        }
+
+        if (!$method) {
+            throw new Exception("Invalid Method");
+        }
     }
 }
