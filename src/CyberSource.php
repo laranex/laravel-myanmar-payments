@@ -35,6 +35,6 @@ class CyberSource
     {
         $payload = collect($request->all());
         $payloadSignature = Helper::signCyberSource($payload);
-        return strcmp($payload["signature"], $payloadSignature) == 0;
+        return hash_equals($payload["signature"], $payloadSignature);
     }
 }
