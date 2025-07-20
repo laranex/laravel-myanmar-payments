@@ -78,7 +78,7 @@ LaravelMyanmarPaymentsFacade::channel("kbz_pay.pwaapp")
     ->getPaymentScreenUrl($orderId, $amount, $nonceStr,  $backendResultUrl)
 # QR Code
 LaravelMyanmarPaymentsFacade::channel("kbz_pay.qr")
-    ->getPaymentScreenUrl($orderId, $amount, $nonceStr,  $backendResultUrl)
+    ->getPaymentQr($orderId, $amount, $nonceStr,  $backendResultUrl)
 
 # In App
 LaravelMyanmarPaymentsFacade::channel("kbz_pay.app")->getPaymentData($orderId, $amount, $nonceStr, $backendResultUrl);
