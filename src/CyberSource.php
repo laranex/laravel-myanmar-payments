@@ -36,7 +36,8 @@ class CyberSource
 
     public function verifySignature(Request $request): bool
     {
-        $payload = collect($request->all());
+        parse_str($request->getContent(), $data);
+        $payload = collect($data);
         $payloadSignature = Helper::signCyberSource($payload);
         return hash_equals($payload["signature"], $payloadSignature);
     }
