@@ -1,11 +1,16 @@
 {
     "name": "laranex/laravel-myanmar-payments",
-    "description": "A Laravel package to deal with Payment Providers from Myanmar",
+    "description": "A Laravel package for Myanmar payment gateways with a unified API",
     "keywords": [
-        "laranex",
         "laravel-myanmar-payments",
-        "laravel-wave-money",
-        "laravel-2c2p"
+        "laranex",
+        "laravel",
+        "myanmar",
+        "payments",
+        "kbzpay",
+        "wavemoney",
+        "ayapay",
+        "cybersource"
     ],
     "homepage": "https://github.com/laranex/laravel-myanmar-payments",
     "license": "MIT",
@@ -18,11 +23,14 @@
         }
     ],
     "require": {
-        "php": "^7.4|^8.0",
-        "firebase/php-jwt": "^v6.3.1"
+        "php": "^8.1",
+        "illuminate/http": "^10.0|^11.0|^12.0|^13.0",
+        "illuminate/support": "^10.0|^11.0|^12.0|^13.0"
     },
     "require-dev": {
-
+        "laravel/pint": "^1.0",
+        "orchestra/testbench": "^8.0|^9.0|^10.0|^11.0",
+        "pestphp/pest": "^3.0|^4.0"
     },
     "autoload": {
         "psr-4": {
@@ -35,19 +43,25 @@
         }
     },
     "scripts": {
-
+        "test": "vendor/bin/pest",
+        "format": "vendor/bin/pint"
     },
     "config": {
+        "allow-plugins": {
+            "pestphp/pest-plugin": true
+        },
         "sort-packages": true
     },
     "extra": {
         "laravel": {
             "providers": [
-                "Laranex\\LaravelMyanmarPayments\\LaravelMyanmarPaymentsServiceProvider"
+                "Laranex\\LaravelMyanmarPayments\\MyanmarPaymentsServiceProvider"
             ],
             "aliases": {
-                "LaravelMyanmarPayments": "Laranex\\LaravelMyanmarPayments\\LaravelMyanmarPaymentsFacade"
+                "MyanmarPayments": "Laranex\\LaravelMyanmarPayments\\MyanmarPaymentsFacade"
             }
         }
-    }
+    },
+    "minimum-stability": "stable",
+    "prefer-stable": true
 }
