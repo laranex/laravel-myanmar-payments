@@ -1,26 +1,25 @@
 # Changelog
 
-All notable changes to `laravel-myanmar-payments` will be documented in this file
+All notable changes to `laravel-myanmar-payments` will be documented in this file.
 
-## 1.0.0 - 2022-11-14
+## 2.0.0
 
-- initial release
-- Wave Money and 2c2p are provided
+- Complete rewrite with a unified API (`initiate`, `verify`, `handleCallback`) across all drivers
+- Dedicated data classes per driver (`KbzPayPaymentData`, `WaveMoneyPaymentData`, `AyaPgwPaymentData`, `CyberSourcePaymentData`) each with built-in `validate()`
+- `KbzPayTradeType` enum replaces raw trade type strings
+- Removed 2C2P support
+- Removed `firebase/php-jwt` dependency (native PHP JWT dropped alongside 2C2P)
+- Requires PHP ^8.1 and Laravel 10–13
+- Full Pest test suite added
 
-## 1.0.1
+## 1.0.6
 
-- JWT Token parser added for 2c2p 
+- Optional userDefined fields for 2c2p supported
 
-### 1.0.5
+## 1.0.5
 
 - Response validator for Wave Money supported
 
-### 1.0.6
+## 1.0.1
 
-- Optional userDefined fields for 2c2p are supported
-  - The format of the config file was changed, and you will need to do following things.
-    - delete config/laravel-myanmar-payments.php
-    - run 
-       ```
-       php artisan vendor:publish --tag="laravel-myanmar-payments"
-      ```
+- Initial KBZ Pay and Wave Money support
