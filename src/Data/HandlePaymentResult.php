@@ -17,11 +17,6 @@ class HandlePaymentResult
         return $this->status === HandlePaymentStatus::Successful;
     }
 
-    public function isPending(): bool
-    {
-        return $this->status === HandlePaymentStatus::Pending;
-    }
-
     public function isFailed(): bool
     {
         return $this->status === HandlePaymentStatus::Failed;

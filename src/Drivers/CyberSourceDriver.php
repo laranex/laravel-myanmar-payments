@@ -62,7 +62,7 @@ class CyberSourceDriver implements PaymentDriver
         return new RequestPaymentResult(
             flow: PaymentFlow::FormBased,
             value: route('myanmar-payments.form', ['payload' => $payload]),
-            form: ['url' => $formUrl, 'data' => $fields],
+            originalValue: ['url' => $formUrl, 'data' => $fields],
             transactionId: $data->transactionId,
             raw: $fields,
         );
@@ -78,7 +78,7 @@ class CyberSourceDriver implements PaymentDriver
         return match ($status) {
             'ACCEPT' => HandlePaymentStatus::Successful,
             'DECLINE' => HandlePaymentStatus::Failed,
-            default => throw new PaymentException("CyberSource returned an unrecognised callback status: $status"),
+            default => throw new PaymentException("unknown status: $status"),
         };
     }
 

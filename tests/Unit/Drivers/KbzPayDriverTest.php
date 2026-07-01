@@ -15,7 +15,7 @@ it('initiates kbzpay pwa and returns a redirect url', function () {
     ]);
 
     $result = app('myanmar-payments')->driver('kbzpay.pwa')->initiate(new KbzPayRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         amount: 1000,
         callbackUrl: 'https://example.com/callback',
     ));
@@ -33,7 +33,7 @@ it('initiates kbzpay qr and returns a qr code', function () {
     ]);
 
     $result = app('myanmar-payments')->driver('kbzpay.qr')->initiate(new KbzPayRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         amount: 1000,
         callbackUrl: 'https://example.com/callback',
     ));
@@ -50,7 +50,7 @@ it('initiates kbzpay app and returns app data', function () {
     ]);
 
     $result = app('myanmar-payments')->driver('kbzpay.app')->initiate(new KbzPayRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         amount: 1000,
         callbackUrl: 'https://example.com/callback',
     ));
@@ -62,25 +62,25 @@ it('initiates kbzpay app and returns app data', function () {
 });
 
 it('returns result with raw when kbzpay precreate response code is not 0', function () {
-    $orderId = fake()->uuid();
+    $transactionId = fake()->uuid();
 
     Http::fake([
         '*/precreate' => Http::response(['Response' => ['code' => '1', 'msg' => 'error']], 200),
     ]);
 
     $result = app('myanmar-payments')->driver('kbzpay.pwa')->initiate(new KbzPayRequestPaymentData(
-        orderId: $orderId,
+        transactionId: $transactionId,
         amount: 1000,
         callbackUrl: 'https://example.com/callback',
     ));
 
-    expect($result->transactionId)->toBe($orderId)
+    expect($result->transactionId)->toBe($transactionId)
         ->and($result->raw)->toBe(['Response' => ['code' => '1', 'msg' => 'error']]);
 });
 
 it('throws when wrong data class is passed to kbzpay driver', function () {
     app('myanmar-payments')->driver('kbzpay.pwa')->initiate(new WaveMoneyRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         callbackUrl: 'https://example.com/callback',
         frontendUrl: 'https://example.com/success',
         description: 'Test payment',
@@ -88,21 +88,21 @@ it('throws when wrong data class is passed to kbzpay driver', function () {
     ));
 })->throws(InvalidArgumentException::class, 'expects');
 
-it('throws validation error for empty orderId', function () {
+it('throws validation error for empty transactionId', function () {
     Http::fake();
 
     app('myanmar-payments')->driver('kbzpay.pwa')->initiate(new KbzPayRequestPaymentData(
-        orderId: '',
+        transactionId: '',
         amount: 1000,
         callbackUrl: 'https://example.com/callback',
     ));
-})->throws(InvalidArgumentException::class, 'orderId is required');
+})->throws(InvalidArgumentException::class, 'transactionId is required');
 
 it('throws validation error for invalid callback url', function () {
     Http::fake();
 
     app('myanmar-payments')->driver('kbzpay.pwa')->initiate(new KbzPayRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         amount: 1000,
         callbackUrl: 'not-a-url',
     ));

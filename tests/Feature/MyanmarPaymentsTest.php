@@ -34,13 +34,12 @@ it('flow helpers report the correct type', function () {
     $form = new RequestPaymentResult(flow: PaymentFlow::FormBased, value: ['url' => 'https://pay.example.com', 'data' => []]);
     $qr = new RequestPaymentResult(flow: PaymentFlow::QrBased, value: 'QR_STRING');
     $app = new RequestPaymentResult(flow: PaymentFlow::AppBased, value: []);
-    $none = new RequestPaymentResult;
 
     expect($redirect->isRedirectBased())->toBeTrue()
         ->and($form->isFormBased())->toBeTrue()
         ->and($qr->isQrBased())->toBeTrue()
         ->and($app->isAppBased())->toBeTrue()
-        ->and($none->isRedirectBased())->toBeFalse();
+        ->and($redirect->isFormBased())->toBeFalse();
 });
 
 it('each driver reports its payment flow', function (string $driver, PaymentFlow $expectedFlow) {

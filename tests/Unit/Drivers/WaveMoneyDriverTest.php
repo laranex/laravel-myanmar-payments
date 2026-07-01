@@ -5,6 +5,7 @@ use Laranex\LaravelMyanmarPayments\Data\Request\KbzPayRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\Request\WaveMoneyRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
 use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
+use Laranex\LaravelMyanmarPayments\Exceptions\ApiException;
 use Laranex\LaravelMyanmarPayments\Exceptions\PaymentException;
 use Laranex\LaravelMyanmarPayments\Exceptions\SignatureVerificationException;
 
@@ -14,7 +15,7 @@ it('initiates wave money payment and returns redirect url', function () {
     ]);
 
     $result = app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         callbackUrl: 'https://example.com/callback',
         frontendUrl: 'https://example.com/success',
         description: 'Test payment',
@@ -31,13 +32,13 @@ it('throws ApiException when wave money returns a non-success message', function
     ]);
 
     app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         callbackUrl: 'https://example.com/callback',
         frontendUrl: 'https://example.com/success',
         description: 'Test payment',
         items: [['name' => 'Product A', 'amount' => 5000]],
     ));
-})->throws(SignatureVerificationException::class, 'WaveMoneyDriver initiation failed.');
+})->throws(ApiException::class, 'initiation failed.');
 
 it('throws ApiException when wave money response is missing transaction_id', function () {
     Http::fake([
@@ -45,17 +46,17 @@ it('throws ApiException when wave money response is missing transaction_id', fun
     ]);
 
     app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         callbackUrl: 'https://example.com/callback',
         frontendUrl: 'https://example.com/success',
         description: 'Test payment',
         items: [['name' => 'Product A', 'amount' => 5000]],
     ));
-})->throws(SignatureVerificationException::class, 'WaveMoneyDriver initiation failed.');
+})->throws(ApiException::class, 'initiation failed.');
 
 it('throws when wrong data class is passed to wave money driver', function () {
     app('myanmar-payments')->driver('wave_money')->initiate(new KbzPayRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         amount: 1000,
         callbackUrl: 'https://example.com/callback',
     ));
@@ -65,7 +66,7 @@ it('throws validation error when items are empty', function () {
     Http::fake();
 
     app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         callbackUrl: 'https://example.com/callback',
         frontendUrl: 'https://example.com/success',
         description: 'Test payment',
@@ -77,7 +78,7 @@ it('throws validation error for invalid item structure', function () {
     Http::fake();
 
     app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         callbackUrl: 'https://example.com/callback',
         frontendUrl: 'https://example.com/success',
         description: 'Test payment',
@@ -89,7 +90,7 @@ it('throws validation error for invalid callback url', function () {
     Http::fake();
 
     app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         callbackUrl: 'not-a-url',
         frontendUrl: 'https://example.com/success',
         description: 'Test payment',
@@ -101,7 +102,7 @@ it('throws validation error for invalid frontend url', function () {
     Http::fake();
 
     app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         callbackUrl: 'https://example.com/callback',
         frontendUrl: 'not-a-url',
         description: 'Test payment',
@@ -113,7 +114,7 @@ it('throws validation error for empty description', function () {
     Http::fake();
 
     app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         callbackUrl: 'https://example.com/callback',
         frontendUrl: 'https://example.com/success',
         description: '',
@@ -127,13 +128,13 @@ it('throws ApiException when wave money request fails with http error', function
     ]);
 
     app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         callbackUrl: 'https://example.com/callback',
         frontendUrl: 'https://example.com/success',
         description: 'Test payment',
         items: [['name' => 'Product A', 'amount' => 5000]],
     ));
-})->throws(SignatureVerificationException::class, 'WaveMoneyDriver initiation failed.');
+})->throws(ApiException::class, 'initiation failed.');
 
 it('handles a valid wave money callback', function () {
     $orderId = fake()->uuid();
@@ -169,7 +170,7 @@ it('throws SignatureVerificationException on invalid wave money callback signatu
         'status' => 'PAYMENT_CONFIRMED',
         'hashValue' => 'INVALID_HASH',
     ]);
-})->throws(SignatureVerificationException::class, 'signature verification failed');
+})->throws(SignatureVerificationException::class, 'Signature Verification Failed');
 
 it('returns failed status for non-confirmed wave money callback', function () {
     $orderId = fake()->uuid();
@@ -241,4 +242,4 @@ it('throws on unknown wave money callback status', function () {
         'requestTime' => '1234',
         'hashValue' => $hashValue,
     ]);
-})->throws(PaymentException::class, 'unrecognised callback status: SOME_UNKNOWN_STATUS');
+})->throws(PaymentException::class, 'unknown status: SOME_UNKNOWN_STATUS');

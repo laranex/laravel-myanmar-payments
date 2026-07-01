@@ -16,12 +16,12 @@ it('initiates cybersource payment and returns redirect url', function () {
 
     expect($result->flow)->toBe(PaymentFlow::FormBased)
         ->and($result->value)->toContain('/myanmar-payments/form?payload=')
-        ->and($result->form)->toHaveKeys(['url', 'data']);
+        ->and($result->originalValue)->toHaveKeys(['url', 'data']);
 });
 
 it('throws when wrong data class is passed to cybersource driver', function () {
     app('myanmar-payments')->driver('cyber_source')->initiate(new KbzPayRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         amount: 1000,
         callbackUrl: 'https://example.com/callback',
     ));
