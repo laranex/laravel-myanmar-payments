@@ -2,7 +2,7 @@
 
 use Laranex\LaravelMyanmarPayments\Contracts\PaymentDriver;
 use Laranex\LaravelMyanmarPayments\Data\RequestPaymentResult;
-use Laranex\LaravelMyanmarPayments\Enums\PaymentStatus;
+use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 use Laranex\LaravelMyanmarPayments\MyanmarPayments;
 use Laranex\LaravelMyanmarPayments\MyanmarPaymentsFacade;
 
@@ -29,23 +29,27 @@ it('throws when no driver is specified', function () {
     app('myanmar-payments')->driver();
 })->throws(InvalidArgumentException::class, 'No default Myanmar payment driver configured');
 
-it('payment result has correct helper methods', function () {
-    $initiated = new RequestPaymentResult(status: PaymentStatus::Initiated, redirectUrl: 'https://pay.example.com');
-    $successful = new RequestPaymentResult(status: PaymentStatus::Successful);
-    $failed = new RequestPaymentResult(status: PaymentStatus::Failed);
-    $pending = new RequestPaymentResult(status: PaymentStatus::Pending);
+it('flow helpers report the correct type', function () {
+    $redirect = new RequestPaymentResult(flow: PaymentFlow::RedirectBased, value: 'https://pay.example.com');
+    $form = new RequestPaymentResult(flow: PaymentFlow::FormBased, value: ['url' => 'https://pay.example.com', 'data' => []]);
+    $qr = new RequestPaymentResult(flow: PaymentFlow::QrBased, value: 'QR_STRING');
+    $app = new RequestPaymentResult(flow: PaymentFlow::AppBased, value: []);
+    $none = new RequestPaymentResult;
 
-    expect($initiated->isInitiated())->toBeTrue()
-        ->and($initiated->requiresRedirect())->toBeTrue()
-        ->and($successful->isSuccessful())->toBeTrue()
-        ->and($failed->isFailed())->toBeTrue()
-        ->and($pending->isPending())->toBeTrue();
+    expect($redirect->isRedirectBased())->toBeTrue()
+        ->and($form->isFormBased())->toBeTrue()
+        ->and($qr->isQrBased())->toBeTrue()
+        ->and($app->isAppBased())->toBeTrue()
+        ->and($none->isRedirectBased())->toBeFalse();
 });
 
-it('redirect result reports requiresRedirect correctly', function () {
-    $withRedirect = new RequestPaymentResult(status: PaymentStatus::Initiated, redirectUrl: 'https://pay.example.com/redirect');
-    $withoutRedirect = new RequestPaymentResult(status: PaymentStatus::Initiated);
-
-    expect($withRedirect->requiresRedirect())->toBeTrue()
-        ->and($withoutRedirect->requiresRedirect())->toBeFalse();
-});
+it('each driver reports its payment flow', function (string $driver, PaymentFlow $expectedFlow) {
+    expect(app('myanmar-payments')->driver($driver)->getPaymentFlow())->toBe($expectedFlow);
+})->with([
+    ['kbzpay.pwa', PaymentFlow::RedirectBased],
+    ['kbzpay.qr', PaymentFlow::QrBased],
+    ['kbzpay.app', PaymentFlow::AppBased],
+    ['wave_money', PaymentFlow::RedirectBased],
+    ['aya_pgw', PaymentFlow::FormBased],
+    ['cyber_source', PaymentFlow::FormBased],
+]);

@@ -1,11 +1,11 @@
 <?php
 
-namespace Laranex\LaravelMyanmarPayments\Data;
+namespace Laranex\LaravelMyanmarPayments\Data\Request;
 
-use Laranex\LaravelMyanmarPayments\Contracts\PaymentData;
-use Laranex\LaravelMyanmarPayments\Exceptions\PaymentException;
+use InvalidArgumentException;
+use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
 
-class AyaPgwPaymentData implements PaymentData
+class AyaPgwRequestPaymentData implements RequestPaymentData
 {
     public function __construct(
         public readonly string $orderId,
@@ -21,19 +21,19 @@ class AyaPgwPaymentData implements PaymentData
     public function validate(): void
     {
         if ($this->orderId === '') {
-            throw new PaymentException('AYA PGW: orderId is required.');
+            throw new InvalidArgumentException('orderId is required.');
         }
 
         if ($this->channel === '') {
-            throw new PaymentException('AYA PGW: channel is required.');
+            throw new InvalidArgumentException('channel is required.');
         }
 
         if ($this->method === '') {
-            throw new PaymentException('AYA PGW: method is required.');
+            throw new InvalidArgumentException('method is required.');
         }
 
         if (count($this->userRefs) > 5) {
-            throw new PaymentException('AYA PGW: a maximum of 5 user reference fields are allowed.');
+            throw new InvalidArgumentException('a maximum of 5 user reference fields are allowed.');
         }
     }
 }
