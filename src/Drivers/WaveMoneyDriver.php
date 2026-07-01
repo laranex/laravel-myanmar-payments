@@ -2,28 +2,29 @@
 
 namespace Laranex\LaravelMyanmarPayments\Drivers;
 
-use Illuminate\Http\Client\ConnectionException;
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
-use Laranex\LaravelMyanmarPayments\Contracts\PaymentData;
+use InvalidArgumentException;
 use Laranex\LaravelMyanmarPayments\Contracts\PaymentDriver;
+use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
+use Laranex\LaravelMyanmarPayments\Data\HandlePaymentResult;
+use Laranex\LaravelMyanmarPayments\Data\Request\WaveMoneyRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\RequestPaymentResult;
-use Laranex\LaravelMyanmarPayments\Data\WaveMoneyPaymentData;
-use Laranex\LaravelMyanmarPayments\Enums\PaymentStatus;
+use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
+use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
+use Laranex\LaravelMyanmarPayments\Exceptions\ApiException;
 use Laranex\LaravelMyanmarPayments\Exceptions\PaymentException;
+use Laranex\LaravelMyanmarPayments\Exceptions\SignatureVerificationException;
 
 class WaveMoneyDriver implements PaymentDriver
 {
-    public function __construct(private readonly array $config) {}
-
-    /**
-     * @throws RequestException
-     * @throws ConnectionException
-     */
-    public function initiate(PaymentData $data): RequestPaymentResult
+    public function __construct(private readonly array $config)
     {
-        if (! $data instanceof WaveMoneyPaymentData) {
-            throw new PaymentException('WaveMoneyDriver expects WaveMoneyPaymentData, got '.get_class($data).'.');
+    }
+
+    public function initiate(RequestPaymentData $data): RequestPaymentResult
+    {
+        if (!$data instanceof WaveMoneyRequestPaymentData) {
+            throw new InvalidArgumentException('initiation failed. expects ' . WaveMoneyRequestPaymentData::class . ', got ' . get_class($data));
         }
 
         $data->validate();
@@ -34,8 +35,8 @@ class WaveMoneyDriver implements PaymentDriver
         $timeToLive = $this->config['time_to_live_in_seconds'];
         $merchantName = $this->config['merchant_name'];
 
-        $frontendUrl = $data->frontendUrl ?: config('app.url', '');
-        $description = $data->description ?: 'Payment for '.config('app.name', 'App');
+        $frontendUrl = $data->frontendUrl;
+        $description = $data->description;
         $merchantReferenceId = $data->merchantReferenceId ?: $data->orderId;
         $amount = array_sum(array_column($data->items, 'amount'));
 
@@ -60,53 +61,69 @@ class WaveMoneyDriver implements PaymentDriver
             'merchant_name' => $merchantName,
             'items' => json_encode($data->items),
             'hash' => $hash,
-        ])->throw();
+        ]);
+
+        $responseData = $response->json() ?? [];
+
+        if (!$response->successful() || ($responseData['message'] ?? null) !== 'success' || empty($responseData['transaction_id'])) {
+            throw new ApiException('initiation failed.', raw: $responseData, code: $response->status());
+        }
 
         return new RequestPaymentResult(
-            status: PaymentStatus::Initiated,
-            redirectUrl: "$baseUrl/authenticate?transaction_id=".$response->json()['transaction_id'],
-            orderId: $data->orderId,
-            raw: $response->json(),
+            flow: PaymentFlow::RedirectBased,
+            value: "$baseUrl/authenticate?transaction_id=" . $responseData['transaction_id'],
+            transactionId: $data->orderId,
+            raw: $responseData,
         );
     }
 
-    public function verify(string $orderId): RequestPaymentResult
+    public function getPaymentFlow(): PaymentFlow
     {
-        throw new PaymentException('Wave Money does not support order verification via API. Use handleCallback() instead.');
+        return PaymentFlow::RedirectBased;
     }
 
-    public function handleCallback(array $payload): RequestPaymentResult
+    public function getPaymentStatus(string $status): HandlePaymentStatus
+    {
+        return match (true) {
+            $status == 'PAYMENT_CONFIRMED' => HandlePaymentStatus::Successful,
+            in_array($status, [
+                'PAYMENT_FAILED',
+                'TRANSACTION_TIMED_OUT',
+                'SCHEDULER_TRANSACTION_TIMED_OUT',
+            ]) => HandlePaymentStatus::Failed,
+            default => throw new PaymentException("unknown status: $status"),
+        };
+    }
+
+    public function handleCallback(array $payload): HandlePaymentResult
     {
         $secretKey = $this->config['secret_key'];
         $status = $payload['status'] ?? '';
 
         $fields = [
-            $payload['status'] ?? '',
-            $payload['timeToLiveSeconds'] ?? '',
-            $payload['merchantId'] ?? '',
-            $payload['orderId'] ?? '',
-            $payload['amount'] ?? '',
-            $payload['backendResultUrl'] ?? '',
-            $payload['merchantReferenceId'] ?? '',
-            $payload['initiatorMsisdn'] ?? '',
-            $payload['transactionId'] ?? '',
-            $payload['paymentRequestId'] ?? '',
-            $payload['requestTime'] ?? '',
+            $payload['status'] ?? null,
+            $payload['timeToLiveSeconds'] ?? null,
+            $payload['merchantId'] ?? null,
+            $payload['orderId'] ?? null,
+            $payload['amount'] ?? null,
+            $payload['backendResultUrl'] ?? null,
+            $payload['merchantReferenceId'] ?? null,
+            $payload['initiatorMsisdn'] ?? null,
+            $payload['transactionId'] ?? null,
+            $payload['paymentRequestId'] ?? null,
+            $payload['requestTime'] ?? null,
         ];
 
-        $expectedHash = hash_hmac('sha256', implode('', $fields), $secretKey);
+        $hashString = implode('', array_map(fn($v) => $v ?? 'null', $fields));
+        $expectedHash = hash_hmac('sha256', $hashString, $secretKey);
 
-        if (! hash_equals($expectedHash, $payload['hashValue'] ?? '')) {
-            throw new PaymentException('Wave Money callback signature verification failed.');
+        if (!hash_equals($expectedHash, $payload['hashValue'] ?? '')) {
+            throw new SignatureVerificationException(raw: $payload);
         }
 
-        $paymentStatus = $status === 'PAYMENT_CONFIRMED'
-            ? PaymentStatus::Successful
-            : PaymentStatus::Failed;
-
-        return new RequestPaymentResult(
-            status: $paymentStatus,
-            orderId: $payload['orderId'] ?? null,
+        return new HandlePaymentResult(
+            status: $this->getPaymentStatus($status),
+            transactionId: $payload['transactionId'],
             raw: $payload,
         );
     }

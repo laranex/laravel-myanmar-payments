@@ -3,21 +3,25 @@
 namespace Laranex\LaravelMyanmarPayments\Drivers;
 
 use Illuminate\Support\Facades\Crypt;
-use Laranex\LaravelMyanmarPayments\Contracts\PaymentData;
+use InvalidArgumentException;
 use Laranex\LaravelMyanmarPayments\Contracts\PaymentDriver;
-use Laranex\LaravelMyanmarPayments\Data\CyberSourcePaymentData;
+use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
+use Laranex\LaravelMyanmarPayments\Data\HandlePaymentResult;
+use Laranex\LaravelMyanmarPayments\Data\Request\CyberSourceRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\RequestPaymentResult;
-use Laranex\LaravelMyanmarPayments\Enums\PaymentStatus;
+use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
+use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 use Laranex\LaravelMyanmarPayments\Exceptions\PaymentException;
+use Laranex\LaravelMyanmarPayments\Exceptions\SignatureVerificationException;
 
 class CyberSourceDriver implements PaymentDriver
 {
     public function __construct(private readonly array $config) {}
 
-    public function initiate(PaymentData $data): RequestPaymentResult
+    public function initiate(RequestPaymentData $data): RequestPaymentResult
     {
-        if (! $data instanceof CyberSourcePaymentData) {
-            throw new PaymentException('CyberSourceDriver expects CyberSourcePaymentData, got '.get_class($data).'.');
+        if (! $data instanceof CyberSourceRequestPaymentData) {
+            throw new InvalidArgumentException('expects '.CyberSourceRequestPaymentData::class.', got '.get_class($data));
         }
 
         $data->validate();
@@ -28,7 +32,7 @@ class CyberSourceDriver implements PaymentDriver
         $baseUrl = $this->config['base_url'];
 
         $transactionUuid = $data->transactionUuid ?: bin2hex(random_bytes(16));
-        $referenceNumber = $data->referenceNumber ?: $data->orderId;
+        $referenceNumber = $data->referenceNumber ?: $data->transactionId;
 
         $signedFieldNames = 'access_key,profile_id,transaction_uuid,signed_field_names,signed_date_time,locale,transaction_type,reference_number,amount,currency,override_custom_receipt_page,override_backoffice_post_url,override_custom_cancel_page';
 
@@ -53,27 +57,32 @@ class CyberSourceDriver implements PaymentDriver
 
         $formUrl = $baseUrl.'/pay';
 
-        $payload = Crypt::encryptString(json_encode([
-            'formUrl' => $formUrl,
-            'formData' => $fields,
-        ]));
+        $payload = Crypt::encryptString(json_encode(['formUrl' => $formUrl, 'formData' => $fields]));
 
         return new RequestPaymentResult(
-            status: PaymentStatus::Initiated,
-            redirectUrl: route('myanmar-payments.form', ['payload' => $payload]),
-            formUrl: $formUrl,
-            formData: $fields,
-            orderId: $data->orderId,
+            flow: PaymentFlow::FormBased,
+            value: route('myanmar-payments.form', ['payload' => $payload]),
+            form: ['url' => $formUrl, 'data' => $fields],
+            transactionId: $data->transactionId,
             raw: $fields,
         );
     }
 
-    public function verify(string $orderId): RequestPaymentResult
+    public function getPaymentFlow(): PaymentFlow
     {
-        throw new PaymentException('CyberSource does not support order verification via this driver. Use handleCallback() instead.');
+        return PaymentFlow::FormBased;
     }
 
-    public function handleCallback(array $payload): RequestPaymentResult
+    public function getPaymentStatus(string $status): HandlePaymentStatus
+    {
+        return match ($status) {
+            'ACCEPT' => HandlePaymentStatus::Successful,
+            'DECLINE' => HandlePaymentStatus::Failed,
+            default => throw new PaymentException("CyberSource returned an unrecognised callback status: $status"),
+        };
+    }
+
+    public function handleCallback(array $payload): HandlePaymentResult
     {
         $secretKey = $this->config['secret_key'];
         $incomingSignature = $payload['signature'] ?? '';
@@ -81,20 +90,12 @@ class CyberSourceDriver implements PaymentDriver
         $expectedSignature = $this->sign($payload, $payload['signed_field_names'] ?? '', $secretKey);
 
         if (! hash_equals($expectedSignature, $incomingSignature)) {
-            throw new PaymentException('CyberSource callback signature verification failed.');
+            throw new SignatureVerificationException('CyberSource callback signature verification failed.', raw: $payload);
         }
 
-        $decision = $payload['decision'] ?? '';
-        $paymentStatus = match ($decision) {
-            'ACCEPT' => PaymentStatus::Successful,
-            'DECLINE', 'ERROR' => PaymentStatus::Failed,
-            'CANCEL' => PaymentStatus::Cancelled,
-            default => PaymentStatus::Pending,
-        };
-
-        return new RequestPaymentResult(
-            status: $paymentStatus,
-            orderId: $payload['req_reference_number'] ?? null,
+        return new HandlePaymentResult(
+            status: $this->getPaymentStatus($payload['decision'] ?? ''),
+            transactionId: $payload['transaction_id'] ?? null,
             raw: $payload,
         );
     }

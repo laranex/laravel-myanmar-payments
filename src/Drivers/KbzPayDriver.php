@@ -3,13 +3,17 @@
 namespace Laranex\LaravelMyanmarPayments\Drivers;
 
 use Illuminate\Support\Facades\Http;
-use Laranex\LaravelMyanmarPayments\Contracts\PaymentData;
+use InvalidArgumentException;
 use Laranex\LaravelMyanmarPayments\Contracts\PaymentDriver;
-use Laranex\LaravelMyanmarPayments\Data\KbzPayPaymentData;
+use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
+use Laranex\LaravelMyanmarPayments\Data\HandlePaymentResult;
+use Laranex\LaravelMyanmarPayments\Data\Request\KbzPayRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\RequestPaymentResult;
+use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
 use Laranex\LaravelMyanmarPayments\Enums\KbzPayTradeType;
-use Laranex\LaravelMyanmarPayments\Enums\PaymentStatus;
+use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 use Laranex\LaravelMyanmarPayments\Exceptions\PaymentException;
+use Laranex\LaravelMyanmarPayments\Exceptions\SignatureVerificationException;
 
 class KbzPayDriver implements PaymentDriver
 {
@@ -18,10 +22,10 @@ class KbzPayDriver implements PaymentDriver
         private readonly array $config,
     ) {}
 
-    public function initiate(PaymentData $data): RequestPaymentResult
+    public function initiate(RequestPaymentData $data): RequestPaymentResult
     {
-        if (! $data instanceof KbzPayPaymentData) {
-            throw new PaymentException('KbzPayDriver expects KbzPayPaymentData, got '.get_class($data).'.');
+        if (! $data instanceof KbzPayRequestPaymentData) {
+            throw new InvalidArgumentException('expects '.KbzPayRequestPaymentData::class.', got '.get_class($data));
         }
 
         $data->validate();
@@ -75,8 +79,7 @@ class KbzPayDriver implements PaymentDriver
 
         if (($response->json()['Response']['code'] ?? null) !== '0') {
             return new RequestPaymentResult(
-                status: PaymentStatus::Failed,
-                orderId: $data->orderId,
+                transactionId: $data->orderId,
                 raw: $response->json() ?? [],
             );
         }
@@ -86,79 +89,34 @@ class KbzPayDriver implements PaymentDriver
         return match ($this->tradeType) {
             KbzPayTradeType::Pwa => $this->buildPwaResult($responseData, $appId, $merchantCode, $nonceStr, $timestamp, $appKey, $data->orderId),
             KbzPayTradeType::Qr => new RequestPaymentResult(
-                status: PaymentStatus::Initiated,
-                qrCode: $responseData['qrCode'],
-                orderId: $data->orderId,
+                flow: PaymentFlow::QrBased,
+                value: $responseData['qrCode'],
+                transactionId: $data->orderId,
                 raw: $responseData,
             ),
             KbzPayTradeType::App => $this->buildAppResult($responseData, $appId, $merchantCode, $nonceStr, $timestamp, $appKey, $data->orderId),
         };
     }
 
-    public function verify(string $orderId): RequestPaymentResult
+    public function getPaymentFlow(): PaymentFlow
     {
-        $nonceStr = bin2hex(random_bytes(16));
-        $appId = $this->config['app_id'];
-        $appKey = $this->config['app_key'];
-        $merchantCode = $this->config['merchant_code'];
-        $baseUrl = $this->config['base_url'];
-        $method = 'kbz.payment.queryorder';
-        $timestamp = (string) time();
-        $version = '3.0';
-
-        $params = [
-            'appid' => $appId,
-            'merch_code' => $merchantCode,
-            'merch_order_id' => $orderId,
-            'method' => $method,
-            'nonce_str' => $nonceStr,
-            'timestamp' => $timestamp,
-            'version' => $version,
-        ];
-
-        $hash = strtoupper(hash('SHA256', $this->buildSignString($params, $appKey)));
-
-        $response = Http::post("$baseUrl/queryorder", [
-            'Request' => [
-                'timestamp' => $timestamp,
-                'method' => $method,
-                'nonce_str' => $nonceStr,
-                'sign_type' => 'SHA256',
-                'sign' => $hash,
-                'version' => $version,
-                'biz_content' => [
-                    'appid' => $appId,
-                    'merch_code' => $merchantCode,
-                    'merch_order_id' => $orderId,
-                ],
-            ],
-        ])->throw();
-
-        if (($response->json()['Response']['code'] ?? null) !== '0') {
-            return new RequestPaymentResult(
-                status: PaymentStatus::Failed,
-                orderId: $orderId,
-                raw: $response->json() ?? [],
-            );
-        }
-
-        $data = $response->json()['Response'];
-
-        $status = match ($data['order_status'] ?? '') {
-            'SUCCESS' => PaymentStatus::Successful,
-            'FAIL' => PaymentStatus::Failed,
-            'CANCELLED' => PaymentStatus::Cancelled,
-            default => PaymentStatus::Pending,
+        return match ($this->tradeType) {
+            KbzPayTradeType::Pwa => PaymentFlow::RedirectBased,
+            KbzPayTradeType::Qr => PaymentFlow::QrBased,
+            KbzPayTradeType::App => PaymentFlow::AppBased,
         };
-
-        return new RequestPaymentResult(
-            status: $status,
-            orderId: $orderId,
-            raw: $data,
-        );
     }
 
-    public function handleCallback(array $payload): RequestPaymentResult
+    public function getPaymentStatus(string $status): HandlePaymentStatus
+    {
+        return match ($status) {
+            'PAY_SUCCESS' => HandlePaymentStatus::Successful,
+            'PAY_FAIL' => HandlePaymentStatus::Failed,
+            default => throw new PaymentException("KBZ Pay returned an unrecognised callback status: $status"),
+        };
+    }
+
+    public function handleCallback(array $payload): HandlePaymentResult
     {
         $data = $payload['Request'] ?? $payload;
         $sign = $data['sign'] ?? '';
@@ -170,18 +128,14 @@ class KbzPayDriver implements PaymentDriver
         $expectedSign = strtoupper(hash('SHA256', http_build_query($params).'&key='.$this->config['app_key']));
 
         if (! hash_equals($expectedSign, $sign)) {
-            throw new PaymentException('KBZ Pay callback signature verification failed.');
+            throw new SignatureVerificationException('KBZ Pay callback signature verification failed.', raw: $payload);
         }
 
-        $status = match ($data['trade_status'] ?? '') {
-            'PAY_SUCCESS' => PaymentStatus::Successful,
-            'PAY_FAIL' => PaymentStatus::Failed,
-            default => PaymentStatus::Pending,
-        };
+        $status = $this->getPaymentStatus($data['trade_status'] ?? '');
 
-        return new RequestPaymentResult(
+        return new HandlePaymentResult(
             status: $status,
-            orderId: $data['merch_order_id'] ?? null,
+            transactionId: $data['kbz_tran_no'] ?? null,
             raw: $data,
         );
     }
@@ -203,9 +157,9 @@ class KbzPayDriver implements PaymentDriver
         $redirectUrl = "$pwaBaseUrl/?appid=$appId&merch_code=$merchantCode&nonce_str=$nonceStr&prepay_id=$prePayId&timestamp=$timestamp&sign=$screenHash";
 
         return new RequestPaymentResult(
-            status: PaymentStatus::Initiated,
-            redirectUrl: $redirectUrl,
-            orderId: $orderId,
+            flow: PaymentFlow::RedirectBased,
+            value: $redirectUrl,
+            transactionId: $orderId,
             raw: $response,
         );
     }
@@ -225,13 +179,13 @@ class KbzPayDriver implements PaymentDriver
         $sign = strtoupper(hash('SHA256', $orderInfo."&key=$appKey"));
 
         return new RequestPaymentResult(
-            status: PaymentStatus::Initiated,
-            appData: [
+            flow: PaymentFlow::AppBased,
+            value: [
                 'orderInfo' => $orderInfo,
                 'sign' => $sign,
                 'signType' => 'SHA256',
             ],
-            orderId: $orderId,
+            transactionId: $orderId,
             raw: $response,
         );
     }

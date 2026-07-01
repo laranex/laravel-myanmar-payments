@@ -1,82 +1,145 @@
 <?php
 
-use Illuminate\Http\Client\RequestException;
 use Illuminate\Support\Facades\Http;
-use Laranex\LaravelMyanmarPayments\Data\KbzPayPaymentData;
-use Laranex\LaravelMyanmarPayments\Data\WaveMoneyPaymentData;
-use Laranex\LaravelMyanmarPayments\Enums\PaymentStatus;
+use Laranex\LaravelMyanmarPayments\Data\Request\KbzPayRequestPaymentData;
+use Laranex\LaravelMyanmarPayments\Data\Request\WaveMoneyRequestPaymentData;
+use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
+use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 use Laranex\LaravelMyanmarPayments\Exceptions\PaymentException;
+use Laranex\LaravelMyanmarPayments\Exceptions\SignatureVerificationException;
 
 it('initiates wave money payment and returns redirect url', function () {
     Http::fake([
-        '*/payment' => Http::response(['transaction_id' => 'WAVE_TXN_123']),
+        '*/payment' => Http::response(['message' => 'success', 'transaction_id' => 'WAVE_TXN_123']),
     ]);
 
-    $result = app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyPaymentData(
-        orderId: 'ORD-001',
+    $result = app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
+        orderId: fake()->uuid(),
         callbackUrl: 'https://example.com/callback',
+        frontendUrl: 'https://example.com/success',
+        description: 'Test payment',
         items: [['name' => 'Product A', 'amount' => 5000]],
     ));
 
-    expect($result->status)->toBe(PaymentStatus::Initiated)
-        ->and($result->requiresRedirect())->toBeTrue()
-        ->and($result->redirectUrl)->toContain('transaction_id=WAVE_TXN_123');
+    expect($result->flow)->toBe(PaymentFlow::RedirectBased)
+        ->and($result->value)->toContain('transaction_id=WAVE_TXN_123');
 });
 
+it('throws ApiException when wave money returns a non-success message', function () {
+    Http::fake([
+        '*/payment' => Http::response(['message' => 'invalid hash']),
+    ]);
+
+    app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
+        orderId: fake()->uuid(),
+        callbackUrl: 'https://example.com/callback',
+        frontendUrl: 'https://example.com/success',
+        description: 'Test payment',
+        items: [['name' => 'Product A', 'amount' => 5000]],
+    ));
+})->throws(SignatureVerificationException::class, 'WaveMoneyDriver initiation failed.');
+
+it('throws ApiException when wave money response is missing transaction_id', function () {
+    Http::fake([
+        '*/payment' => Http::response(['message' => 'success']),
+    ]);
+
+    app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
+        orderId: fake()->uuid(),
+        callbackUrl: 'https://example.com/callback',
+        frontendUrl: 'https://example.com/success',
+        description: 'Test payment',
+        items: [['name' => 'Product A', 'amount' => 5000]],
+    ));
+})->throws(SignatureVerificationException::class, 'WaveMoneyDriver initiation failed.');
+
 it('throws when wrong data class is passed to wave money driver', function () {
-    app('myanmar-payments')->driver('wave_money')->initiate(new KbzPayPaymentData(
-        orderId: 'ORD-001',
+    app('myanmar-payments')->driver('wave_money')->initiate(new KbzPayRequestPaymentData(
+        orderId: fake()->uuid(),
         amount: 1000,
         callbackUrl: 'https://example.com/callback',
     ));
-})->throws(PaymentException::class, 'WaveMoneyDriver expects WaveMoneyPaymentData');
+})->throws(InvalidArgumentException::class, 'expects');
 
 it('throws validation error when items are empty', function () {
     Http::fake();
 
-    app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyPaymentData(
-        orderId: 'ORD-001',
+    app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
+        orderId: fake()->uuid(),
         callbackUrl: 'https://example.com/callback',
+        frontendUrl: 'https://example.com/success',
+        description: 'Test payment',
         items: [],
     ));
-})->throws(PaymentException::class, 'at least one item is required');
+})->throws(InvalidArgumentException::class, 'at least one item is required');
 
 it('throws validation error for invalid item structure', function () {
     Http::fake();
 
-    app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyPaymentData(
-        orderId: 'ORD-001',
+    app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
+        orderId: fake()->uuid(),
         callbackUrl: 'https://example.com/callback',
+        frontendUrl: 'https://example.com/success',
+        description: 'Test payment',
         items: [['title' => 'Bad', 'price' => 5000]],
     ));
-})->throws(PaymentException::class, 'each item must have');
+})->throws(InvalidArgumentException::class, 'is invalid, must be');
 
 it('throws validation error for invalid callback url', function () {
     Http::fake();
 
-    app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyPaymentData(
-        orderId: 'ORD-001',
+    app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
+        orderId: fake()->uuid(),
         callbackUrl: 'not-a-url',
+        frontendUrl: 'https://example.com/success',
+        description: 'Test payment',
         items: [['name' => 'Product A', 'amount' => 5000]],
     ));
-})->throws(PaymentException::class, 'callbackUrl must be a valid URL');
+})->throws(InvalidArgumentException::class, 'callbackUrl must be a valid URL');
 
-it('throws when wave money request fails', function () {
+it('throws validation error for invalid frontend url', function () {
+    Http::fake();
+
+    app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
+        orderId: fake()->uuid(),
+        callbackUrl: 'https://example.com/callback',
+        frontendUrl: 'not-a-url',
+        description: 'Test payment',
+        items: [['name' => 'Product A', 'amount' => 5000]],
+    ));
+})->throws(InvalidArgumentException::class, 'frontendUrl must be a valid URL');
+
+it('throws validation error for empty description', function () {
+    Http::fake();
+
+    app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
+        orderId: fake()->uuid(),
+        callbackUrl: 'https://example.com/callback',
+        frontendUrl: 'https://example.com/success',
+        description: '',
+        items: [['name' => 'Product A', 'amount' => 5000]],
+    ));
+})->throws(InvalidArgumentException::class, 'description is required');
+
+it('throws ApiException when wave money request fails with http error', function () {
     Http::fake([
         '*/payment' => Http::response([], 500),
     ]);
 
-    app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyPaymentData(
-        orderId: 'ORD-001',
+    app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
+        orderId: fake()->uuid(),
         callbackUrl: 'https://example.com/callback',
+        frontendUrl: 'https://example.com/success',
+        description: 'Test payment',
         items: [['name' => 'Product A', 'amount' => 5000]],
     ));
-})->throws(RequestException::class);
+})->throws(SignatureVerificationException::class, 'WaveMoneyDriver initiation failed.');
 
 it('handles a valid wave money callback', function () {
+    $orderId = fake()->uuid();
     $secretKey = 'TEST_WAVE_SECRET';
     $fields = [
-        'PAYMENT_CONFIRMED', '300', 'TEST_WAVE_MERCHANT', 'ORD-001', '5000',
+        'PAYMENT_CONFIRMED', '300', 'TEST_WAVE_MERCHANT', $orderId, '5000',
         'https://example.com/callback', 'REF-001', '09123456789',
         'WAVE_TXN_123', 'PAY_REQ_001', '1234567890',
     ];
@@ -86,7 +149,7 @@ it('handles a valid wave money callback', function () {
         'status' => 'PAYMENT_CONFIRMED',
         'timeToLiveSeconds' => '300',
         'merchantId' => 'TEST_WAVE_MERCHANT',
-        'orderId' => 'ORD-001',
+        'orderId' => $orderId,
         'amount' => '5000',
         'backendResultUrl' => 'https://example.com/callback',
         'merchantReferenceId' => 'REF-001',
@@ -97,27 +160,28 @@ it('handles a valid wave money callback', function () {
         'hashValue' => $hashValue,
     ]);
 
-    expect($result->status)->toBe(PaymentStatus::Successful)
-        ->and($result->orderId)->toBe('ORD-001');
+    expect($result->status)->toBe(HandlePaymentStatus::Successful)
+        ->and($result->transactionId)->toBe('WAVE_TXN_123');
 });
 
-it('throws on invalid wave money callback signature', function () {
+it('throws SignatureVerificationException on invalid wave money callback signature', function () {
     app('myanmar-payments')->driver('wave_money')->handleCallback([
         'status' => 'PAYMENT_CONFIRMED',
         'hashValue' => 'INVALID_HASH',
     ]);
-})->throws(PaymentException::class, 'signature verification failed');
+})->throws(SignatureVerificationException::class, 'signature verification failed');
 
 it('returns failed status for non-confirmed wave money callback', function () {
+    $orderId = fake()->uuid();
     $secretKey = 'TEST_WAVE_SECRET';
-    $fields = ['PAYMENT_FAILED', '300', 'TEST_WAVE_MERCHANT', 'ORD-001', '5000', 'https://example.com/callback', 'REF-001', '09123456789', 'TXN', 'PAY_REQ', '1234'];
+    $fields = ['PAYMENT_FAILED', '300', 'TEST_WAVE_MERCHANT', $orderId, '5000', 'https://example.com/callback', 'REF-001', '09123456789', 'TXN', 'PAY_REQ', '1234'];
     $hashValue = hash_hmac('sha256', implode('', $fields), $secretKey);
 
     $result = app('myanmar-payments')->driver('wave_money')->handleCallback([
         'status' => 'PAYMENT_FAILED',
         'timeToLiveSeconds' => '300',
         'merchantId' => 'TEST_WAVE_MERCHANT',
-        'orderId' => 'ORD-001',
+        'orderId' => $orderId,
         'amount' => '5000',
         'backendResultUrl' => 'https://example.com/callback',
         'merchantReferenceId' => 'REF-001',
@@ -128,9 +192,53 @@ it('returns failed status for non-confirmed wave money callback', function () {
         'hashValue' => $hashValue,
     ]);
 
-    expect($result->status)->toBe(PaymentStatus::Failed);
+    expect($result->status)->toBe(HandlePaymentStatus::Failed);
 });
 
-it('throws when verify is called', function () {
-    app('myanmar-payments')->driver('wave_money')->verify('ORD-001');
-})->throws(PaymentException::class);
+it('returns failed status for timed out wave money callback', function () {
+    $orderId = fake()->uuid();
+    $secretKey = 'TEST_WAVE_SECRET';
+    $status = 'SCHEDULER_TRANSACTION_TIMED_OUT';
+    $fields = [$status, '300', 'TEST_WAVE_MERCHANT', $orderId, '5000', 'https://example.com/callback', $orderId, 'null', 'null', 'PAY_REQ', '1234'];
+    $hashValue = hash_hmac('sha256', implode('', $fields), $secretKey);
+
+    $result = app('myanmar-payments')->driver('wave_money')->handleCallback([
+        'status' => $status,
+        'timeToLiveSeconds' => '300',
+        'merchantId' => 'TEST_WAVE_MERCHANT',
+        'orderId' => $orderId,
+        'amount' => '5000',
+        'backendResultUrl' => 'https://example.com/callback',
+        'merchantReferenceId' => $orderId,
+        'initiatorMsisdn' => null,
+        'transactionId' => null,
+        'paymentRequestId' => 'PAY_REQ',
+        'requestTime' => '1234',
+        'hashValue' => $hashValue,
+    ]);
+
+    expect($result->status)->toBe(HandlePaymentStatus::Failed);
+});
+
+it('throws on unknown wave money callback status', function () {
+    $orderId = fake()->uuid();
+    $secretKey = 'TEST_WAVE_SECRET';
+    $status = 'SOME_UNKNOWN_STATUS';
+    $fields = [$status, '300', 'TEST_WAVE_MERCHANT', $orderId, '5000', 'https://example.com/callback', $orderId, 'null', 'null', 'PAY_REQ', '1234'];
+    $hashValue = hash_hmac('sha256', implode('', $fields), $secretKey);
+
+    app('myanmar-payments')->driver('wave_money')->handleCallback([
+        'status' => $status,
+        'timeToLiveSeconds' => '300',
+        'merchantId' => 'TEST_WAVE_MERCHANT',
+        'orderId' => $orderId,
+        'amount' => '5000',
+        'backendResultUrl' => 'https://example.com/callback',
+        'merchantReferenceId' => $orderId,
+        'initiatorMsisdn' => null,
+        'transactionId' => null,
+        'paymentRequestId' => 'PAY_REQ',
+        'requestTime' => '1234',
+        'hashValue' => $hashValue,
+    ]);
+})->throws(PaymentException::class, 'unrecognised callback status: SOME_UNKNOWN_STATUS');

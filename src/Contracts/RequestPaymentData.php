@@ -2,7 +2,7 @@
 
 namespace Laranex\LaravelMyanmarPayments\Contracts;
 
-interface PaymentData
+interface RequestPaymentData
 {
     public function validate(): void;
 }

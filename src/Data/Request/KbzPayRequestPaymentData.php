@@ -1,11 +1,11 @@
 <?php
 
-namespace Laranex\LaravelMyanmarPayments\Data;
+namespace Laranex\LaravelMyanmarPayments\Data\Request;
 
-use Laranex\LaravelMyanmarPayments\Contracts\PaymentData;
-use Laranex\LaravelMyanmarPayments\Exceptions\PaymentException;
+use InvalidArgumentException;
+use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
 
-class KbzPayPaymentData implements PaymentData
+class KbzPayRequestPaymentData implements RequestPaymentData
 {
     public function __construct(
         public readonly string $orderId,
@@ -18,15 +18,15 @@ class KbzPayPaymentData implements PaymentData
     public function validate(): void
     {
         if ($this->orderId === '') {
-            throw new PaymentException('KBZ Pay: orderId is required.');
+            throw new InvalidArgumentException('orderId is required.');
         }
 
         if ($this->amount < 0) {
-            throw new PaymentException('KBZ Pay: amount cannot be negative.');
+            throw new InvalidArgumentException('amount cannot be negative.');
         }
 
         if (! filter_var($this->callbackUrl, FILTER_VALIDATE_URL)) {
-            throw new PaymentException('KBZ Pay: callbackUrl must be a valid URL.');
+            throw new InvalidArgumentException('callbackUrl must be a valid URL.');
         }
     }
 }

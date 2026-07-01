@@ -1,10 +1,11 @@
 <?php
 
 use Illuminate\Support\Facades\Http;
-use Laranex\LaravelMyanmarPayments\Data\KbzPayPaymentData;
-use Laranex\LaravelMyanmarPayments\Data\WaveMoneyPaymentData;
-use Laranex\LaravelMyanmarPayments\Enums\PaymentStatus;
-use Laranex\LaravelMyanmarPayments\Exceptions\PaymentException;
+use Laranex\LaravelMyanmarPayments\Data\Request\KbzPayRequestPaymentData;
+use Laranex\LaravelMyanmarPayments\Data\Request\WaveMoneyRequestPaymentData;
+use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
+use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
+use Laranex\LaravelMyanmarPayments\Exceptions\SignatureVerificationException;
 
 it('initiates kbzpay pwa and returns a redirect url', function () {
     Http::fake([
@@ -13,16 +14,15 @@ it('initiates kbzpay pwa and returns a redirect url', function () {
         ]),
     ]);
 
-    $result = app('myanmar-payments')->driver('kbzpay.pwa')->initiate(new KbzPayPaymentData(
-        orderId: 'ORD-001',
+    $result = app('myanmar-payments')->driver('kbzpay.pwa')->initiate(new KbzPayRequestPaymentData(
+        orderId: fake()->uuid(),
         amount: 1000,
         callbackUrl: 'https://example.com/callback',
     ));
 
-    expect($result->status)->toBe(PaymentStatus::Initiated)
-        ->and($result->requiresRedirect())->toBeTrue()
-        ->and($result->redirectUrl)->toContain('prepay_id=PREPAY_123')
-        ->and($result->redirectUrl)->toContain('sign=');
+    expect($result->flow)->toBe(PaymentFlow::RedirectBased)
+        ->and($result->value)->toContain('prepay_id=PREPAY_123')
+        ->and($result->value)->toContain('sign=');
 });
 
 it('initiates kbzpay qr and returns a qr code', function () {
@@ -32,15 +32,14 @@ it('initiates kbzpay qr and returns a qr code', function () {
         ]),
     ]);
 
-    $result = app('myanmar-payments')->driver('kbzpay.qr')->initiate(new KbzPayPaymentData(
-        orderId: 'ORD-001',
+    $result = app('myanmar-payments')->driver('kbzpay.qr')->initiate(new KbzPayRequestPaymentData(
+        orderId: fake()->uuid(),
         amount: 1000,
         callbackUrl: 'https://example.com/callback',
     ));
 
-    expect($result->status)->toBe(PaymentStatus::Initiated)
-        ->and($result->qrCode)->toBe('QR_DATA_STRING')
-        ->and($result->requiresRedirect())->toBeFalse();
+    expect($result->flow)->toBe(PaymentFlow::QrBased)
+        ->and($result->value)->toBe('QR_DATA_STRING');
 });
 
 it('initiates kbzpay app and returns app data', function () {
@@ -50,81 +49,70 @@ it('initiates kbzpay app and returns app data', function () {
         ]),
     ]);
 
-    $result = app('myanmar-payments')->driver('kbzpay.app')->initiate(new KbzPayPaymentData(
-        orderId: 'ORD-001',
+    $result = app('myanmar-payments')->driver('kbzpay.app')->initiate(new KbzPayRequestPaymentData(
+        orderId: fake()->uuid(),
         amount: 1000,
         callbackUrl: 'https://example.com/callback',
     ));
 
-    expect($result->status)->toBe(PaymentStatus::Initiated)
-        ->and($result->appData)->toBeArray()
-        ->and($result->appData)->toHaveKeys(['orderInfo', 'sign', 'signType'])
-        ->and($result->appData['signType'])->toBe('SHA256');
+    expect($result->flow)->toBe(PaymentFlow::AppBased)
+        ->and($result->value)->toBeArray()
+        ->and($result->value)->toHaveKeys(['orderInfo', 'sign', 'signType'])
+        ->and($result->value['signType'])->toBe('SHA256');
 });
 
-it('returns failed status when kbzpay precreate response code is not 0', function () {
+it('returns result with raw when kbzpay precreate response code is not 0', function () {
+    $orderId = fake()->uuid();
+
     Http::fake([
         '*/precreate' => Http::response(['Response' => ['code' => '1', 'msg' => 'error']], 200),
     ]);
 
-    $result = app('myanmar-payments')->driver('kbzpay.pwa')->initiate(new KbzPayPaymentData(
-        orderId: 'ORD-001',
+    $result = app('myanmar-payments')->driver('kbzpay.pwa')->initiate(new KbzPayRequestPaymentData(
+        orderId: $orderId,
         amount: 1000,
         callbackUrl: 'https://example.com/callback',
     ));
 
-    expect($result->status)->toBe(PaymentStatus::Failed)
-        ->and($result->orderId)->toBe('ORD-001')
+    expect($result->transactionId)->toBe($orderId)
         ->and($result->raw)->toBe(['Response' => ['code' => '1', 'msg' => 'error']]);
 });
 
 it('throws when wrong data class is passed to kbzpay driver', function () {
-    app('myanmar-payments')->driver('kbzpay.pwa')->initiate(new WaveMoneyPaymentData(
-        orderId: 'ORD-001',
+    app('myanmar-payments')->driver('kbzpay.pwa')->initiate(new WaveMoneyRequestPaymentData(
+        orderId: fake()->uuid(),
         callbackUrl: 'https://example.com/callback',
+        frontendUrl: 'https://example.com/success',
+        description: 'Test payment',
+        items: [['name' => 'Product A', 'amount' => 5000]],
     ));
-})->throws(PaymentException::class, 'KbzPayDriver expects KbzPayPaymentData');
+})->throws(InvalidArgumentException::class, 'expects');
 
 it('throws validation error for empty orderId', function () {
     Http::fake();
 
-    app('myanmar-payments')->driver('kbzpay.pwa')->initiate(new KbzPayPaymentData(
+    app('myanmar-payments')->driver('kbzpay.pwa')->initiate(new KbzPayRequestPaymentData(
         orderId: '',
         amount: 1000,
         callbackUrl: 'https://example.com/callback',
     ));
-})->throws(PaymentException::class, 'orderId is required');
+})->throws(InvalidArgumentException::class, 'orderId is required');
 
 it('throws validation error for invalid callback url', function () {
     Http::fake();
 
-    app('myanmar-payments')->driver('kbzpay.pwa')->initiate(new KbzPayPaymentData(
-        orderId: 'ORD-001',
+    app('myanmar-payments')->driver('kbzpay.pwa')->initiate(new KbzPayRequestPaymentData(
+        orderId: fake()->uuid(),
         amount: 1000,
         callbackUrl: 'not-a-url',
     ));
-})->throws(PaymentException::class, 'callbackUrl must be a valid URL');
-
-it('verifies a kbzpay order and returns successful status', function () {
-    Http::fake([
-        '*/queryorder' => Http::response([
-            'Response' => [
-                'code' => '0',
-                'order_status' => 'SUCCESS',
-                'kbz_tran_no' => 'KBZ_TXN_789',
-            ],
-        ]),
-    ]);
-
-    $result = app('myanmar-payments')->driver('kbzpay.pwa')->verify('ORD-001');
-
-    expect($result->status)->toBe(PaymentStatus::Successful);
-});
+})->throws(InvalidArgumentException::class, 'callbackUrl must be a valid URL');
 
 it('handles a valid kbzpay callback', function () {
+    $orderId = fake()->uuid();
     $appKey = 'TEST_APP_KEY';
     $payload = [
-        'merch_order_id' => 'ORD-001',
+        'merch_order_id' => $orderId,
         'kbz_tran_no' => 'KBZ_TXN_001',
         'trade_status' => 'PAY_SUCCESS',
         'sign_type' => 'SHA256',
@@ -138,17 +126,17 @@ it('handles a valid kbzpay callback', function () {
 
     $result = app('myanmar-payments')->driver('kbzpay.pwa')->handleCallback(['Request' => $payload]);
 
-    expect($result->status)->toBe(PaymentStatus::Successful)
-        ->and($result->orderId)->toBe('ORD-001');
+    expect($result->status)->toBe(HandlePaymentStatus::Successful)
+        ->and($result->transactionId)->toBe('KBZ_TXN_001');
 });
 
-it('throws on invalid kbzpay callback signature', function () {
+it('throws SignatureVerificationException on invalid kbzpay callback signature', function () {
     app('myanmar-payments')->driver('kbzpay.pwa')->handleCallback([
         'Request' => [
-            'merch_order_id' => 'ORD-001',
+            'merch_order_id' => fake()->uuid(),
             'trade_status' => 'PAY_SUCCESS',
             'sign' => 'INVALID_SIGNATURE',
             'sign_type' => 'SHA256',
         ],
     ]);
-})->throws(PaymentException::class, 'signature verification failed');
+})->throws(SignatureVerificationException::class, 'signature verification failed');

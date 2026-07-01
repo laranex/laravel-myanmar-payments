@@ -1,14 +1,14 @@
 <?php
 
-namespace Laranex\LaravelMyanmarPayments\Data;
+namespace Laranex\LaravelMyanmarPayments\Data\Request;
 
-use Laranex\LaravelMyanmarPayments\Contracts\PaymentData;
-use Laranex\LaravelMyanmarPayments\Exceptions\PaymentException;
+use InvalidArgumentException;
+use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
 
-class CyberSourcePaymentData implements PaymentData
+class CyberSourceRequestPaymentData implements RequestPaymentData
 {
     public function __construct(
-        public readonly string $orderId,
+        public readonly string $transactionId,
         public readonly int $amount,
         public readonly string $callbackUrl,
         public readonly string $currency = 'MMK',
@@ -21,12 +21,12 @@ class CyberSourcePaymentData implements PaymentData
 
     public function validate(): void
     {
-        if ($this->orderId === '') {
-            throw new PaymentException('CyberSource: orderId is required.');
+        if ($this->transactionId === '') {
+            throw new InvalidArgumentException('transactionId is required.');
         }
 
         if (! filter_var($this->callbackUrl, FILTER_VALIDATE_URL)) {
-            throw new PaymentException('CyberSource: callbackUrl must be a valid URL.');
+            throw new InvalidArgumentException('callbackUrl must be a valid URL.');
         }
     }
 }

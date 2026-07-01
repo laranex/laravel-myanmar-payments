@@ -3,22 +3,25 @@
 namespace Laranex\LaravelMyanmarPayments\Drivers;
 
 use Illuminate\Support\Facades\Crypt;
-use Illuminate\Support\Facades\Http;
-use Laranex\LaravelMyanmarPayments\Contracts\PaymentData;
+use InvalidArgumentException;
 use Laranex\LaravelMyanmarPayments\Contracts\PaymentDriver;
-use Laranex\LaravelMyanmarPayments\Data\AyaPgwPaymentData;
+use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
+use Laranex\LaravelMyanmarPayments\Data\HandlePaymentResult;
+use Laranex\LaravelMyanmarPayments\Data\Request\AyaPgwRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\RequestPaymentResult;
-use Laranex\LaravelMyanmarPayments\Enums\PaymentStatus;
+use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
+use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 use Laranex\LaravelMyanmarPayments\Exceptions\PaymentException;
+use Laranex\LaravelMyanmarPayments\Exceptions\SignatureVerificationException;
 
 class AyaPgwDriver implements PaymentDriver
 {
     public function __construct(private readonly array $config) {}
 
-    public function initiate(PaymentData $data): RequestPaymentResult
+    public function initiate(RequestPaymentData $data): RequestPaymentResult
     {
-        if (! $data instanceof AyaPgwPaymentData) {
-            throw new PaymentException('AyaPgwDriver expects AyaPgwPaymentData, got '.get_class($data).'.');
+        if (! $data instanceof AyaPgwRequestPaymentData) {
+            throw new InvalidArgumentException('expects '.AyaPgwRequestPaymentData::class.', got '.get_class($data));
         }
 
         $data->validate();
@@ -52,65 +55,32 @@ class AyaPgwDriver implements PaymentDriver
 
         $formUrl = "$baseUrl/v1/payment/request";
 
-        $payload = Crypt::encryptString(json_encode([
-            'formUrl' => $formUrl,
-            'formData' => $requestData,
-        ]));
+        $payload = Crypt::encryptString(json_encode(['formUrl' => $formUrl, 'formData' => $requestData]));
 
         return new RequestPaymentResult(
-            status: PaymentStatus::Initiated,
-            redirectUrl: route('myanmar-payments.form', ['payload' => $payload]),
-            formUrl: $formUrl,
-            formData: $requestData,
-            orderId: $data->orderId,
+            flow: PaymentFlow::FormBased,
+            value: route('myanmar-payments.form', ['payload' => $payload]),
+            form: ['url' => $formUrl, 'data' => $requestData],
+            transactionId: $data->orderId,
             raw: $requestData,
         );
     }
 
-    public function verify(string $orderId): RequestPaymentResult
+    public function getPaymentFlow(): PaymentFlow
     {
-        $appKey = $this->config['app_key'];
-        $appSecret = $this->config['app_secret'];
-        $baseUrl = $this->config['base_url'];
-        $timestamp = time();
-
-        $checkSum = hash_hmac('sha256', "$orderId:$timestamp:$appKey", $appSecret);
-
-        $response = Http::withHeaders([
-            'Accept' => 'application/json',
-            'Content-Type' => 'application/json',
-        ])->post("$baseUrl/v1/payment/enquiry", [
-            'merchOrderId' => $orderId,
-            'appKey' => $appKey,
-            'timestamp' => $timestamp,
-            'checkSum' => $checkSum,
-        ])->throw();
-
-        if (($response->json()['status'] ?? null) !== '00') {
-            return new RequestPaymentResult(
-                status: PaymentStatus::Failed,
-                orderId: $orderId,
-                raw: $response->json() ?? [],
-            );
-        }
-
-        $responseData = $response->json()['data'];
-
-        $paymentStatus = match ($responseData['transactionStatus'] ?? '') {
-            'SUCCESS' => PaymentStatus::Successful,
-            'FAILED' => PaymentStatus::Failed,
-            'CANCELLED' => PaymentStatus::Cancelled,
-            default => PaymentStatus::Pending,
-        };
-
-        return new RequestPaymentResult(
-            status: $paymentStatus,
-            orderId: $orderId,
-            raw: $responseData,
-        );
+        return PaymentFlow::FormBased;
     }
 
-    public function handleCallback(array $payload): RequestPaymentResult
+    public function getPaymentStatus(string $status): HandlePaymentStatus
+    {
+        return match ($status) {
+            'SUCCESS' => HandlePaymentStatus::Successful,
+            'FAILED' => HandlePaymentStatus::Failed,
+            default => throw new PaymentException("AYA PGW returned an unrecognised callback status: $status"),
+        };
+    }
+
+    public function handleCallback(array $payload): HandlePaymentResult
     {
         $appSecret = $this->config['app_secret'];
         $encodedPayload = $payload['payload'] ?? '';
@@ -129,19 +99,14 @@ class AyaPgwDriver implements PaymentDriver
         $expectedCheckSum = hash_hmac('sha256', implode(':', array_values($decoded)), $appSecret);
 
         if (! hash_equals($expectedCheckSum, $checkSum)) {
-            throw new PaymentException('AYA PGW callback checksum verification failed.');
+            throw new SignatureVerificationException('AYA PGW callback checksum verification failed.', raw: $payload);
         }
 
-        $paymentStatus = match ($decoded['transactionStatus'] ?? '') {
-            'SUCCESS' => PaymentStatus::Successful,
-            'FAILED' => PaymentStatus::Failed,
-            'CANCELLED' => PaymentStatus::Cancelled,
-            default => PaymentStatus::Pending,
-        };
+        $paymentStatus = $this->getPaymentStatus($decoded['transactionStatus'] ?? '');
 
-        return new RequestPaymentResult(
+        return new HandlePaymentResult(
             status: $paymentStatus,
-            orderId: $decoded['merchOrderId'] ?? null,
+            transactionId: $decoded['transactionId'] ?? null,
             raw: $decoded,
         );
     }

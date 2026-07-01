@@ -2,48 +2,38 @@
 
 namespace Laranex\LaravelMyanmarPayments\Data;
 
-use Laranex\LaravelMyanmarPayments\Enums\PaymentStatus;
+use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 
 class RequestPaymentResult
 {
+    /**
+     * @param  array{url: string, data: array<string, mixed>}|null  $form
+     */
     public function __construct(
-        public readonly PaymentStatus $status,
-        public readonly ?string $redirectUrl = null,
-        public readonly ?string $formUrl = null,
-        public readonly ?array $formData = null,
-        public readonly ?string $qrCode = null,
-        public readonly ?array $appData = null,
-        public readonly ?string $orderId = null,
+        public readonly ?PaymentFlow $flow = null,
+        public readonly mixed $value = null,
+        public readonly ?array $form = null,
+        public readonly ?string $transactionId = null,
         public readonly array $raw = [],
     ) {}
 
-    public function isSuccessful(): bool
+    public function isRedirectBased(): bool
     {
-        return $this->status === PaymentStatus::Successful;
+        return $this->flow === PaymentFlow::RedirectBased;
     }
 
-    public function isPending(): bool
+    public function isFormBased(): bool
     {
-        return $this->status === PaymentStatus::Pending;
+        return $this->flow === PaymentFlow::FormBased;
     }
 
-    public function isInitiated(): bool
+    public function isQrBased(): bool
     {
-        return $this->status === PaymentStatus::Initiated;
+        return $this->flow === PaymentFlow::QrBased;
     }
 
-    public function isFailed(): bool
+    public function isAppBased(): bool
     {
-        return $this->status === PaymentStatus::Failed;
-    }
-
-    public function isCancelled(): bool
-    {
-        return $this->status === PaymentStatus::Cancelled;
-    }
-
-    public function requiresRedirect(): bool
-    {
-        return $this->redirectUrl !== null;
+        return $this->flow === PaymentFlow::AppBased;
     }
 }
