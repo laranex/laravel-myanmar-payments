@@ -8,19 +8,18 @@ use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
 class WaveMoneyRequestPaymentData implements RequestPaymentData
 {
     public function __construct(
-        public readonly string $orderId,
+        public readonly string $transactionId,
         public readonly string $callbackUrl,
         public readonly string $frontendUrl,
         public readonly string $description,
         /** @var array<array{name: string, amount: int}> */
         public readonly array $items = [],
-        public readonly string $merchantReferenceId = '',
     ) {}
 
     public function validate(): void
     {
-        if ($this->orderId === '') {
-            throw new InvalidArgumentException('orderId is required.');
+        if ($this->transactionId === '') {
+            throw new InvalidArgumentException('transactionId is required.');
         }
 
         if (! filter_var($this->callbackUrl, FILTER_VALIDATE_URL)) {

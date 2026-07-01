@@ -44,7 +44,7 @@ class KbzPayDriver implements PaymentDriver
         $params = [
             'appid' => $appId,
             'merch_code' => $merchantCode,
-            'merch_order_id' => $data->orderId,
+            'merch_order_id' => $data->transactionId,
             'method' => $method,
             'nonce_str' => $nonceStr,
             'notify_url' => $data->callbackUrl,
@@ -69,7 +69,7 @@ class KbzPayDriver implements PaymentDriver
                 'biz_content' => [
                     'appid' => $appId,
                     'merch_code' => $merchantCode,
-                    'merch_order_id' => $data->orderId,
+                    'merch_order_id' => $data->transactionId,
                     'total_amount' => $totalAmount,
                     'trade_type' => $tradeType,
                     'trans_currency' => $data->currency,
@@ -79,7 +79,8 @@ class KbzPayDriver implements PaymentDriver
 
         if (($response->json()['Response']['code'] ?? null) !== '0') {
             return new RequestPaymentResult(
-                transactionId: $data->orderId,
+                flow: $this->getPaymentFlow(),
+                transactionId: $data->transactionId,
                 raw: $response->json() ?? [],
             );
         }
@@ -87,14 +88,15 @@ class KbzPayDriver implements PaymentDriver
         $responseData = $response->json()['Response'];
 
         return match ($this->tradeType) {
-            KbzPayTradeType::Pwa => $this->buildPwaResult($responseData, $appId, $merchantCode, $nonceStr, $timestamp, $appKey, $data->orderId),
+            KbzPayTradeType::Pwa => $this->buildPwaResult($responseData, $appId, $merchantCode, $nonceStr, $timestamp, $appKey, $data->transactionId),
             KbzPayTradeType::Qr => new RequestPaymentResult(
                 flow: PaymentFlow::QrBased,
                 value: $responseData['qrCode'],
-                transactionId: $data->orderId,
+                originalValue: $responseData['qrCode'],
+                transactionId: $data->transactionId,
                 raw: $responseData,
             ),
-            KbzPayTradeType::App => $this->buildAppResult($responseData, $appId, $merchantCode, $nonceStr, $timestamp, $appKey, $data->orderId),
+            KbzPayTradeType::App => $this->buildAppResult($responseData, $appId, $merchantCode, $nonceStr, $timestamp, $appKey, $data->transactionId),
         };
     }
 
@@ -112,7 +114,7 @@ class KbzPayDriver implements PaymentDriver
         return match ($status) {
             'PAY_SUCCESS' => HandlePaymentStatus::Successful,
             'PAY_FAIL' => HandlePaymentStatus::Failed,
-            default => throw new PaymentException("KBZ Pay returned an unrecognised callback status: $status"),
+            default => throw new PaymentException("unknown status: $status"),
         };
     }
 
@@ -159,6 +161,7 @@ class KbzPayDriver implements PaymentDriver
         return new RequestPaymentResult(
             flow: PaymentFlow::RedirectBased,
             value: $redirectUrl,
+            originalValue: $redirectUrl,
             transactionId: $orderId,
             raw: $response,
         );
@@ -178,13 +181,16 @@ class KbzPayDriver implements PaymentDriver
         $orderInfo = implode('&', $parts);
         $sign = strtoupper(hash('SHA256', $orderInfo."&key=$appKey"));
 
+        $appPayload = [
+            'orderInfo' => $orderInfo,
+            'sign' => $sign,
+            'signType' => 'SHA256',
+        ];
+
         return new RequestPaymentResult(
             flow: PaymentFlow::AppBased,
-            value: [
-                'orderInfo' => $orderInfo,
-                'sign' => $sign,
-                'signType' => 'SHA256',
-            ],
+            value: $appPayload,
+            originalValue: $appPayload,
             transactionId: $orderId,
             raw: $response,
         );

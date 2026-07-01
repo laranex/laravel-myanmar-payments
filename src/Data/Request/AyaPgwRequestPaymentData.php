@@ -8,7 +8,7 @@ use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
 class AyaPgwRequestPaymentData implements RequestPaymentData
 {
     public function __construct(
-        public readonly string $orderId,
+        public readonly string $transactionId,
         public readonly int $amount,
         public readonly string $channel,
         public readonly string $method,
@@ -20,8 +20,8 @@ class AyaPgwRequestPaymentData implements RequestPaymentData
 
     public function validate(): void
     {
-        if ($this->orderId === '') {
-            throw new InvalidArgumentException('orderId is required.');
+        if ($this->transactionId === '') {
+            throw new InvalidArgumentException('transactionId is required.');
         }
 
         if ($this->channel === '') {

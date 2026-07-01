@@ -34,7 +34,7 @@ class AyaPgwDriver implements PaymentDriver
         $userRefs = array_pad(array_values($data->userRefs), 5, '');
 
         $requestData = [
-            'merchOrderId' => $data->orderId,
+            'merchOrderId' => $data->transactionId,
             'amount' => (string) $data->amount,
             'appKey' => $appKey,
             'timestamp' => $timestamp,
@@ -60,8 +60,8 @@ class AyaPgwDriver implements PaymentDriver
         return new RequestPaymentResult(
             flow: PaymentFlow::FormBased,
             value: route('myanmar-payments.form', ['payload' => $payload]),
-            form: ['url' => $formUrl, 'data' => $requestData],
-            transactionId: $data->orderId,
+            originalValue: ['url' => $formUrl, 'data' => $requestData],
+            transactionId: $data->transactionId,
             raw: $requestData,
         );
     }
@@ -76,7 +76,7 @@ class AyaPgwDriver implements PaymentDriver
         return match ($status) {
             'SUCCESS' => HandlePaymentStatus::Successful,
             'FAILED' => HandlePaymentStatus::Failed,
-            default => throw new PaymentException("AYA PGW returned an unrecognised callback status: $status"),
+            default => throw new PaymentException("unknown status: $status"),
         };
     }
 

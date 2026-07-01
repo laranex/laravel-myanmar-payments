@@ -17,14 +17,12 @@ use Laranex\LaravelMyanmarPayments\Exceptions\SignatureVerificationException;
 
 class WaveMoneyDriver implements PaymentDriver
 {
-    public function __construct(private readonly array $config)
-    {
-    }
+    public function __construct(private readonly array $config) {}
 
     public function initiate(RequestPaymentData $data): RequestPaymentResult
     {
-        if (!$data instanceof WaveMoneyRequestPaymentData) {
-            throw new InvalidArgumentException('initiation failed. expects ' . WaveMoneyRequestPaymentData::class . ', got ' . get_class($data));
+        if (! $data instanceof WaveMoneyRequestPaymentData) {
+            throw new InvalidArgumentException('initiation failed. expects '.WaveMoneyRequestPaymentData::class.', got '.get_class($data));
         }
 
         $data->validate();
@@ -37,13 +35,13 @@ class WaveMoneyDriver implements PaymentDriver
 
         $frontendUrl = $data->frontendUrl;
         $description = $data->description;
-        $merchantReferenceId = $data->merchantReferenceId ?: $data->orderId;
+        $merchantReferenceId = $data->transactionId;
         $amount = array_sum(array_column($data->items, 'amount'));
 
         $hash = hash_hmac('sha256', implode('', [
             $timeToLive,
             $merchantId,
-            $data->orderId,
+            $data->transactionId,
             $amount,
             $data->callbackUrl,
             $merchantReferenceId,
@@ -52,7 +50,7 @@ class WaveMoneyDriver implements PaymentDriver
         $response = Http::acceptJson()->post("$baseUrl/payment", [
             'time_to_live_in_seconds' => $timeToLive,
             'merchant_id' => $merchantId,
-            'order_id' => $data->orderId,
+            'order_id' => $data->transactionId,
             'merchant_reference_id' => $merchantReferenceId,
             'frontend_result_url' => $frontendUrl,
             'backend_result_url' => $data->callbackUrl,
@@ -65,14 +63,17 @@ class WaveMoneyDriver implements PaymentDriver
 
         $responseData = $response->json() ?? [];
 
-        if (!$response->successful() || ($responseData['message'] ?? null) !== 'success' || empty($responseData['transaction_id'])) {
+        if (! $response->successful() || ($responseData['message'] ?? null) !== 'success' || empty($responseData['transaction_id'])) {
             throw new ApiException('initiation failed.', raw: $responseData, code: $response->status());
         }
 
+        $redirectUrl = "$baseUrl/authenticate?transaction_id=".$responseData['transaction_id'];
+
         return new RequestPaymentResult(
             flow: PaymentFlow::RedirectBased,
-            value: "$baseUrl/authenticate?transaction_id=" . $responseData['transaction_id'],
-            transactionId: $data->orderId,
+            value: $redirectUrl,
+            originalValue: $redirectUrl,
+            transactionId: $data->transactionId,
             raw: $responseData,
         );
     }
@@ -114,10 +115,10 @@ class WaveMoneyDriver implements PaymentDriver
             $payload['requestTime'] ?? null,
         ];
 
-        $hashString = implode('', array_map(fn($v) => $v ?? 'null', $fields));
+        $hashString = implode('', array_map(fn ($v) => $v ?? 'null', $fields));
         $expectedHash = hash_hmac('sha256', $hashString, $secretKey);
 
-        if (!hash_equals($expectedHash, $payload['hashValue'] ?? '')) {
+        if (! hash_equals($expectedHash, $payload['hashValue'] ?? '')) {
             throw new SignatureVerificationException(raw: $payload);
         }
 

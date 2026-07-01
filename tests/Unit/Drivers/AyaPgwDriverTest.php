@@ -8,7 +8,7 @@ use Laranex\LaravelMyanmarPayments\Exceptions\SignatureVerificationException;
 
 it('initiates aya pgw payment and returns redirect url', function () {
     $result = app('myanmar-payments')->driver('aya_pgw')->initiate(new AyaPgwRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         amount: 2000,
         channel: 'AYA_PAY',
         method: 'WALLET',
@@ -16,29 +16,29 @@ it('initiates aya pgw payment and returns redirect url', function () {
 
     expect($result->flow)->toBe(PaymentFlow::FormBased)
         ->and($result->value)->toContain('/myanmar-payments/form?payload=')
-        ->and($result->form)->toHaveKeys(['url', 'data']);
+        ->and($result->originalValue)->toHaveKeys(['url', 'data']);
 });
 
 it('throws when wrong data class is passed to aya pgw driver', function () {
     app('myanmar-payments')->driver('aya_pgw')->initiate(new KbzPayRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         amount: 1000,
         callbackUrl: 'https://example.com/callback',
     ));
 })->throws(InvalidArgumentException::class, 'expects');
 
-it('throws validation error for empty orderId', function () {
+it('throws validation error for empty transactionId', function () {
     app('myanmar-payments')->driver('aya_pgw')->initiate(new AyaPgwRequestPaymentData(
-        orderId: '',
+        transactionId: '',
         amount: 2000,
         channel: 'AYA_PAY',
         method: 'WALLET',
     ));
-})->throws(InvalidArgumentException::class, 'orderId is required');
+})->throws(InvalidArgumentException::class, 'transactionId is required');
 
 it('throws validation error for empty channel', function () {
     app('myanmar-payments')->driver('aya_pgw')->initiate(new AyaPgwRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         amount: 2000,
         channel: '',
         method: 'WALLET',
@@ -47,7 +47,7 @@ it('throws validation error for empty channel', function () {
 
 it('throws validation error when user refs exceed 5', function () {
     app('myanmar-payments')->driver('aya_pgw')->initiate(new AyaPgwRequestPaymentData(
-        orderId: fake()->uuid(),
+        transactionId: fake()->uuid(),
         amount: 2000,
         channel: 'AYA_PAY',
         method: 'WALLET',

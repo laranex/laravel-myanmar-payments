@@ -6,14 +6,11 @@ use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 
 class RequestPaymentResult
 {
-    /**
-     * @param  array{url: string, data: array<string, mixed>}|null  $form
-     */
     public function __construct(
-        public readonly ?PaymentFlow $flow = null,
+        public readonly PaymentFlow $flow,
         public readonly mixed $value = null,
-        public readonly ?array $form = null,
-        public readonly ?string $transactionId = null,
+        public readonly mixed $originalValue = null,
+        public readonly string $transactionId = '',
         public readonly array $raw = [],
     ) {}
 
