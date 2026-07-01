@@ -12,7 +12,7 @@
         "ayapay",
         "cybersource"
     ],
-    "homepage": "(https://laranex.vercel.app/laravel-myanmar-payments",
+    "homepage": "https://laranex.vercel.app/laravel-myanmar-payments",
     "license": "MIT",
     "type": "library",
     "authors": [
