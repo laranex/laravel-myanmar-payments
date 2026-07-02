@@ -7,21 +7,21 @@ use InvalidArgumentException;
 use Laranex\LaravelMyanmarPayments\Contracts\PaymentDriver;
 use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\HandlePaymentResult;
-use Laranex\LaravelMyanmarPayments\Data\Request\AyaPgwRequestPaymentData;
+use Laranex\LaravelMyanmarPayments\Data\Request\AyaPayRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\RequestPaymentResult;
 use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
 use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 use Laranex\LaravelMyanmarPayments\Exceptions\PaymentException;
 use Laranex\LaravelMyanmarPayments\Exceptions\SignatureVerificationException;
 
-class AyaPgwDriver implements PaymentDriver
+class AyaPayDriver implements PaymentDriver
 {
     public function __construct(private readonly array $config) {}
 
     public function initiate(RequestPaymentData $data): RequestPaymentResult
     {
-        if (! $data instanceof AyaPgwRequestPaymentData) {
-            throw new InvalidArgumentException('expects '.AyaPgwRequestPaymentData::class.', got '.get_class($data));
+        if (! $data instanceof AyaPayRequestPaymentData) {
+            throw new InvalidArgumentException('expects '.AyaPayRequestPaymentData::class.', got '.get_class($data));
         }
 
         $data->validate();
@@ -45,7 +45,7 @@ class AyaPgwDriver implements PaymentDriver
             'userRef5' => $userRefs[4],
             'description' => $data->description,
             'currencyCode' => $data->currencyCode,
-            'channel' => $data->channel,
+            'channel' => 'AYA_PAY',
             'method' => $data->method,
             'overrideFrontendRedirectUrl' => $data->frontendUrl,
         ];
@@ -87,26 +87,26 @@ class AyaPgwDriver implements PaymentDriver
         $checkSum = $payload['checkSum'] ?? '';
 
         if (! $encodedPayload) {
-            throw new PaymentException('AYA PGW callback missing payload.');
+            throw new PaymentException('AYA Pay callback missing payload.');
         }
 
         $decoded = json_decode(base64_decode($encodedPayload), true);
 
         if (! is_array($decoded)) {
-            throw new PaymentException('AYA PGW callback payload could not be decoded.');
+            throw new PaymentException('AYA Pay callback payload could not be decoded.');
         }
 
         $expectedCheckSum = hash_hmac('sha256', implode(':', array_values($decoded)), $appSecret);
 
         if (! hash_equals($expectedCheckSum, $checkSum)) {
-            throw new SignatureVerificationException('AYA PGW callback checksum verification failed.', raw: $payload);
+            throw new SignatureVerificationException('AYA Pay callback checksum verification failed.', raw: $payload);
         }
 
         $paymentStatus = $this->getPaymentStatus($decoded['transactionStatus'] ?? '');
 
         return new HandlePaymentResult(
             status: $paymentStatus,
-            transactionId: $decoded['transactionId'] ?? null,
+            transactionId: $decoded['transactionId'] ?? '',
             raw: $decoded,
         );
     }

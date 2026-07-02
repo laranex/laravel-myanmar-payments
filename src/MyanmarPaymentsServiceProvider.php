@@ -3,7 +3,7 @@
 namespace Laranex\LaravelMyanmarPayments;
 
 use Illuminate\Support\ServiceProvider;
-use Laranex\LaravelMyanmarPayments\Drivers\AyaPgwDriver;
+use Laranex\LaravelMyanmarPayments\Drivers\AyaPayDriver;
 use Laranex\LaravelMyanmarPayments\Drivers\CyberSourceDriver;
 use Laranex\LaravelMyanmarPayments\Drivers\KbzPayDriver;
 use Laranex\LaravelMyanmarPayments\Drivers\WaveMoneyDriver;
@@ -25,7 +25,7 @@ class MyanmarPaymentsServiceProvider extends ServiceProvider
 
             $manager->extend('wave_money', fn () => new WaveMoneyDriver($app['config']->get('myanmar-payments.wave_money', [])));
 
-            $manager->extend('aya_pgw', fn () => new AyaPgwDriver($app['config']->get('myanmar-payments.aya_pgw', [])));
+            $manager->extend('aya_pay', fn () => new AyaPayDriver($app['config']->get('myanmar-payments.aya_pay', [])));
             $manager->extend('cyber_source', fn () => new CyberSourceDriver($app['config']->get('myanmar-payments.cyber_source', [])));
 
             return $manager;

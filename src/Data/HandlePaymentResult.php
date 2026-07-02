@@ -8,7 +8,7 @@ class HandlePaymentResult
 {
     public function __construct(
         public readonly HandlePaymentStatus $status,
-        public readonly ?string $transactionId = null,
+        public readonly string $transactionId = '',
         public readonly array $raw = [],
     ) {}
 

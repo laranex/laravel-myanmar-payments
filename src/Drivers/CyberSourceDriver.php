@@ -95,7 +95,7 @@ class CyberSourceDriver implements PaymentDriver
 
         return new HandlePaymentResult(
             status: $this->getPaymentStatus($payload['decision'] ?? ''),
-            transactionId: $payload['transaction_id'] ?? null,
+            transactionId: $payload['transaction_id'] ?? '',
             raw: $payload,
         );
     }

@@ -1,16 +1,15 @@
 <?php
 
-use Laranex\LaravelMyanmarPayments\Data\Request\AyaPgwRequestPaymentData;
+use Laranex\LaravelMyanmarPayments\Data\Request\AyaPayRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\Request\KbzPayRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
 use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 use Laranex\LaravelMyanmarPayments\Exceptions\SignatureVerificationException;
 
-it('initiates aya pgw payment and returns redirect url', function () {
-    $result = app('myanmar-payments')->driver('aya_pgw')->initiate(new AyaPgwRequestPaymentData(
+it('initiates aya pay payment and returns redirect url', function () {
+    $result = app('myanmar-payments')->driver('aya_pay')->initiate(new AyaPayRequestPaymentData(
         transactionId: fake()->uuid(),
         amount: 2000,
-        channel: 'AYA_PAY',
         method: 'WALLET',
     ));
 
@@ -19,8 +18,8 @@ it('initiates aya pgw payment and returns redirect url', function () {
         ->and($result->originalValue)->toHaveKeys(['url', 'data']);
 });
 
-it('throws when wrong data class is passed to aya pgw driver', function () {
-    app('myanmar-payments')->driver('aya_pgw')->initiate(new KbzPayRequestPaymentData(
+it('throws when wrong data class is passed to aya pay driver', function () {
+    app('myanmar-payments')->driver('aya_pay')->initiate(new KbzPayRequestPaymentData(
         transactionId: fake()->uuid(),
         amount: 1000,
         callbackUrl: 'https://example.com/callback',
@@ -28,34 +27,23 @@ it('throws when wrong data class is passed to aya pgw driver', function () {
 })->throws(InvalidArgumentException::class, 'expects');
 
 it('throws validation error for empty transactionId', function () {
-    app('myanmar-payments')->driver('aya_pgw')->initiate(new AyaPgwRequestPaymentData(
+    app('myanmar-payments')->driver('aya_pay')->initiate(new AyaPayRequestPaymentData(
         transactionId: '',
         amount: 2000,
-        channel: 'AYA_PAY',
         method: 'WALLET',
     ));
 })->throws(InvalidArgumentException::class, 'transactionId is required');
 
-it('throws validation error for empty channel', function () {
-    app('myanmar-payments')->driver('aya_pgw')->initiate(new AyaPgwRequestPaymentData(
-        transactionId: fake()->uuid(),
-        amount: 2000,
-        channel: '',
-        method: 'WALLET',
-    ));
-})->throws(InvalidArgumentException::class, 'channel is required');
-
 it('throws validation error when user refs exceed 5', function () {
-    app('myanmar-payments')->driver('aya_pgw')->initiate(new AyaPgwRequestPaymentData(
+    app('myanmar-payments')->driver('aya_pay')->initiate(new AyaPayRequestPaymentData(
         transactionId: fake()->uuid(),
         amount: 2000,
-        channel: 'AYA_PAY',
         method: 'WALLET',
         userRefs: ['a', 'b', 'c', 'd', 'e', 'f'],
     ));
 })->throws(InvalidArgumentException::class, 'maximum of 5 user reference fields');
 
-it('handles a valid aya pgw callback', function () {
+it('handles a valid aya pay callback', function () {
     $orderId = fake()->uuid();
     $appSecret = 'TEST_AYA_APP_SECRET';
     $decoded = [
@@ -66,7 +54,7 @@ it('handles a valid aya pgw callback', function () {
     $encodedPayload = base64_encode(json_encode($decoded));
     $checkSum = hash_hmac('sha256', implode(':', array_values($decoded)), $appSecret);
 
-    $result = app('myanmar-payments')->driver('aya_pgw')->handleCallback([
+    $result = app('myanmar-payments')->driver('aya_pay')->handleCallback([
         'payload' => $encodedPayload,
         'checkSum' => $checkSum,
     ]);
@@ -75,11 +63,11 @@ it('handles a valid aya pgw callback', function () {
         ->and($result->transactionId)->toBe('AYA_TXN_002');
 });
 
-it('throws SignatureVerificationException on invalid aya pgw callback checksum', function () {
+it('throws SignatureVerificationException on invalid aya pay callback checksum', function () {
     $decoded = ['transactionStatus' => 'SUCCESS', 'transactionId' => 'AYA_TXN_002', 'merchOrderId' => fake()->uuid()];
     $encodedPayload = base64_encode(json_encode($decoded));
 
-    app('myanmar-payments')->driver('aya_pgw')->handleCallback([
+    app('myanmar-payments')->driver('aya_pay')->handleCallback([
         'payload' => $encodedPayload,
         'checkSum' => 'INVALID_CHECKSUM',
     ]);

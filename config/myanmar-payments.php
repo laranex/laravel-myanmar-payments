@@ -28,10 +28,10 @@ return [
         'secret_key' => env('CYBER_SOURCE_SECRET_KEY'),
     ],
 
-    'aya_pgw' => [
-        'base_url' => env('AYA_PGW_BASE_URL', ''),
-        'app_key' => env('AYA_PGW_APP_KEY'),
-        'app_secret' => env('AYA_PGW_APP_SECRET'),
+    'aya_pay' => [
+        'base_url' => env('AYA_PAY_BASE_URL', ''),
+        'app_key' => env('AYA_PAY_APP_KEY'),
+        'app_secret' => env('AYA_PAY_APP_SECRET'),
     ],
 
 ];

@@ -17,7 +17,7 @@ it('resolves each registered driver as a payment driver', function (string $driv
     'kbzpay.qr',
     'kbzpay.app',
     'wave_money',
-    'aya_pgw',
+    'aya_pay',
     'cyber_source',
 ]);
 
@@ -49,6 +49,6 @@ it('each driver reports its payment flow', function (string $driver, PaymentFlow
     ['kbzpay.qr', PaymentFlow::QrBased],
     ['kbzpay.app', PaymentFlow::AppBased],
     ['wave_money', PaymentFlow::RedirectBased],
-    ['aya_pgw', PaymentFlow::FormBased],
+    ['aya_pay', PaymentFlow::FormBased],
     ['cyber_source', PaymentFlow::FormBased],
 ]);
