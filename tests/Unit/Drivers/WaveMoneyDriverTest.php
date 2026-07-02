@@ -14,9 +14,9 @@ it('initiates wave money payment and returns redirect url', function () {
     ]);
 
     $result = app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        transactionId: fake()->uuid(),
-        callbackUrl: 'https://example.com/callback',
-        frontendUrl: 'https://example.com/success',
+        orderId: fake()->uuid(),
+        backendResultUrl: 'https://example.com/callback',
+        frontendResultUrl: 'https://example.com/success',
         description: 'Test payment',
         items: [['name' => 'Product A', 'amount' => 5000]],
     ));
@@ -31,9 +31,9 @@ it('throws ApiException when wave money returns a non-success message', function
     ]);
 
     app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        transactionId: fake()->uuid(),
-        callbackUrl: 'https://example.com/callback',
-        frontendUrl: 'https://example.com/success',
+        orderId: fake()->uuid(),
+        backendResultUrl: 'https://example.com/callback',
+        frontendResultUrl: 'https://example.com/success',
         description: 'Test payment',
         items: [['name' => 'Product A', 'amount' => 5000]],
     ));
@@ -45,9 +45,9 @@ it('throws ApiException when wave money response is missing transaction_id', fun
     ]);
 
     app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        transactionId: fake()->uuid(),
-        callbackUrl: 'https://example.com/callback',
-        frontendUrl: 'https://example.com/success',
+        orderId: fake()->uuid(),
+        backendResultUrl: 'https://example.com/callback',
+        frontendResultUrl: 'https://example.com/success',
         description: 'Test payment',
         items: [['name' => 'Product A', 'amount' => 5000]],
     ));
@@ -61,65 +61,118 @@ it('throws when wrong data class is passed to wave money driver', function () {
     ));
 })->throws(InvalidArgumentException::class, 'expects');
 
-it('throws validation error when items are empty', function () {
-    Http::fake();
+it('derives amount from items sum when amount is not provided', function () {
+    $data = new WaveMoneyRequestPaymentData(
+        orderId: 'order-001',
+        backendResultUrl: 'https://example.com/callback',
+        frontendResultUrl: 'https://example.com/success',
+        description: 'Test payment',
+        items: [
+            ['name' => 'Product A', 'amount' => 3000],
+            ['name' => 'Product B', 'amount' => 2000],
+        ],
+    );
 
-    app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        transactionId: fake()->uuid(),
-        callbackUrl: 'https://example.com/callback',
-        frontendUrl: 'https://example.com/success',
+    expect($data->amount)->toBe(5000);
+});
+
+it('uses explicit amount when provided', function () {
+    $data = new WaveMoneyRequestPaymentData(
+        orderId: 'order-001',
+        backendResultUrl: 'https://example.com/callback',
+        frontendResultUrl: 'https://example.com/success',
+        description: 'Test payment',
+        items: [['name' => 'Product A', 'amount' => 3000]],
+        amount: 9999,
+    );
+
+    expect($data->amount)->toBe(9999);
+});
+
+it('defaults merchantReferenceId to orderId when not provided', function () {
+    $data = new WaveMoneyRequestPaymentData(
+        orderId: 'order-001',
+        backendResultUrl: 'https://example.com/callback',
+        frontendResultUrl: 'https://example.com/success',
+        description: 'Test payment',
+        items: [['name' => 'Product A', 'amount' => 3000]],
+    );
+
+    expect($data->merchantReferenceId)->toBe('order-001');
+});
+
+it('uses explicit merchantReferenceId when provided', function () {
+    $data = new WaveMoneyRequestPaymentData(
+        orderId: 'order-001',
+        backendResultUrl: 'https://example.com/callback',
+        frontendResultUrl: 'https://example.com/success',
+        description: 'Test payment',
+        items: [['name' => 'Product A', 'amount' => 3000]],
+        merchantReferenceId: 'custom-ref',
+    );
+
+    expect($data->merchantReferenceId)->toBe('custom-ref');
+});
+
+it('throws validation error for empty orderId', function () {
+    new WaveMoneyRequestPaymentData(
+        orderId: '',
+        backendResultUrl: 'https://example.com/callback',
+        frontendResultUrl: 'https://example.com/success',
+        description: 'Test payment',
+        items: [['name' => 'Product A', 'amount' => 5000]],
+    );
+})->throws(InvalidArgumentException::class);
+
+it('throws validation error when items are empty', function () {
+    new WaveMoneyRequestPaymentData(
+        orderId: fake()->uuid(),
+        backendResultUrl: 'https://example.com/callback',
+        frontendResultUrl: 'https://example.com/success',
         description: 'Test payment',
         items: [],
-    ));
-})->throws(InvalidArgumentException::class, 'at least one item is required');
+    );
+})->throws(InvalidArgumentException::class);
 
 it('throws validation error for invalid item structure', function () {
-    Http::fake();
-
-    app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        transactionId: fake()->uuid(),
-        callbackUrl: 'https://example.com/callback',
-        frontendUrl: 'https://example.com/success',
+    new WaveMoneyRequestPaymentData(
+        orderId: fake()->uuid(),
+        backendResultUrl: 'https://example.com/callback',
+        frontendResultUrl: 'https://example.com/success',
         description: 'Test payment',
         items: [['title' => 'Bad', 'price' => 5000]],
-    ));
-})->throws(InvalidArgumentException::class, 'is invalid, must be');
+    );
+})->throws(InvalidArgumentException::class);
 
-it('throws validation error for invalid callback url', function () {
-    Http::fake();
-
-    app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        transactionId: fake()->uuid(),
-        callbackUrl: 'not-a-url',
-        frontendUrl: 'https://example.com/success',
+it('throws validation error for invalid backend result url', function () {
+    new WaveMoneyRequestPaymentData(
+        orderId: fake()->uuid(),
+        backendResultUrl: 'not-a-url',
+        frontendResultUrl: 'https://example.com/success',
         description: 'Test payment',
         items: [['name' => 'Product A', 'amount' => 5000]],
-    ));
-})->throws(InvalidArgumentException::class, 'callbackUrl must be a valid URL');
+    );
+})->throws(InvalidArgumentException::class);
 
-it('throws validation error for invalid frontend url', function () {
-    Http::fake();
-
-    app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        transactionId: fake()->uuid(),
-        callbackUrl: 'https://example.com/callback',
-        frontendUrl: 'not-a-url',
+it('throws validation error for invalid frontend result url', function () {
+    new WaveMoneyRequestPaymentData(
+        orderId: fake()->uuid(),
+        backendResultUrl: 'https://example.com/callback',
+        frontendResultUrl: 'not-a-url',
         description: 'Test payment',
         items: [['name' => 'Product A', 'amount' => 5000]],
-    ));
-})->throws(InvalidArgumentException::class, 'frontendUrl must be a valid URL');
+    );
+})->throws(InvalidArgumentException::class);
 
 it('throws validation error for empty description', function () {
-    Http::fake();
-
-    app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        transactionId: fake()->uuid(),
-        callbackUrl: 'https://example.com/callback',
-        frontendUrl: 'https://example.com/success',
+    new WaveMoneyRequestPaymentData(
+        orderId: fake()->uuid(),
+        backendResultUrl: 'https://example.com/callback',
+        frontendResultUrl: 'https://example.com/success',
         description: '',
         items: [['name' => 'Product A', 'amount' => 5000]],
-    ));
-})->throws(InvalidArgumentException::class, 'description is required');
+    );
+})->throws(InvalidArgumentException::class);
 
 it('throws ApiException when wave money request fails with http error', function () {
     Http::fake([
@@ -127,9 +180,9 @@ it('throws ApiException when wave money request fails with http error', function
     ]);
 
     app('myanmar-payments')->driver('wave_money')->initiate(new WaveMoneyRequestPaymentData(
-        transactionId: fake()->uuid(),
-        callbackUrl: 'https://example.com/callback',
-        frontendUrl: 'https://example.com/success',
+        orderId: fake()->uuid(),
+        backendResultUrl: 'https://example.com/callback',
+        frontendResultUrl: 'https://example.com/success',
         description: 'Test payment',
         items: [['name' => 'Product A', 'amount' => 5000]],
     ));
@@ -161,7 +214,7 @@ it('handles a valid wave money callback', function () {
     ]);
 
     expect($result->successful)->toBeTrue()
-        ->and($result->transactionId)->toBe('WAVE_TXN_123');
+        ->and($result->transactionId)->toBe($orderId);
 });
 
 it('throws SignatureVerificationException on invalid wave money callback signature', function () {

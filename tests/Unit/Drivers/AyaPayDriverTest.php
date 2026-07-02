@@ -31,7 +31,7 @@ it('throws validation error for empty transactionId', function () {
         amount: 2000,
         method: 'WALLET',
     ));
-})->throws(InvalidArgumentException::class, 'transactionId is required');
+})->throws(InvalidArgumentException::class);
 
 it('throws validation error when user refs exceed 5', function () {
     app('myanmar-payments')->driver('aya_pay')->initiate(new AyaPayRequestPaymentData(
@@ -40,7 +40,7 @@ it('throws validation error when user refs exceed 5', function () {
         method: 'WALLET',
         userRefs: ['a', 'b', 'c', 'd', 'e', 'f'],
     ));
-})->throws(InvalidArgumentException::class, 'maximum of 5 user reference fields');
+})->throws(InvalidArgumentException::class);
 
 it('handles a valid aya pay callback', function () {
     $orderId = fake()->uuid();

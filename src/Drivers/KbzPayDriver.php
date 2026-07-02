@@ -27,8 +27,6 @@ class KbzPayDriver implements PaymentDriver
             throw new InvalidArgumentException('expects '.KbzPayRequestPaymentData::class.', got '.get_class($data));
         }
 
-        $data->validate();
-
         $nonceStr = $data->nonceStr ?: bin2hex(random_bytes(16));
         $appId = $this->config['app_id'];
         $appKey = $this->config['app_key'];
@@ -108,7 +106,7 @@ class KbzPayDriver implements PaymentDriver
         };
     }
 
-    public function getPaymentStatus(string $status): bool
+    public function isSuccessful(string $status): bool
     {
         return match ($status) {
             'PAY_SUCCESS' => true,
@@ -132,10 +130,10 @@ class KbzPayDriver implements PaymentDriver
             throw new SignatureVerificationException('KBZ Pay callback signature verification failed.', raw: $payload);
         }
 
-        $status = $this->getPaymentStatus($data['trade_status']);
+        $status = $this->isSuccessful($data['trade_status']);
 
         return new HandlePaymentResult(
-            successful: $this->getPaymentStatus($data['trade_status']),
+            successful: $this->isSuccessful($data['trade_status']),
             transactionId: $data['kbz_tran_no'],
             raw: $data,
         );

@@ -79,9 +79,9 @@ it('returns result with raw when kbzpay precreate response code is not 0', funct
 
 it('throws when wrong data class is passed to kbzpay driver', function () {
     app('myanmar-payments')->driver('kbzpay.pwa')->initiate(new WaveMoneyRequestPaymentData(
-        transactionId: fake()->uuid(),
-        callbackUrl: 'https://example.com/callback',
-        frontendUrl: 'https://example.com/success',
+        orderId: fake()->uuid(),
+        backendResultUrl: 'https://example.com/callback',
+        frontendResultUrl: 'https://example.com/success',
         description: 'Test payment',
         items: [['name' => 'Product A', 'amount' => 5000]],
     ));
@@ -95,7 +95,7 @@ it('throws validation error for empty transactionId', function () {
         amount: 1000,
         callbackUrl: 'https://example.com/callback',
     ));
-})->throws(InvalidArgumentException::class, 'transactionId is required');
+})->throws(InvalidArgumentException::class);
 
 it('throws validation error for invalid callback url', function () {
     Http::fake();
@@ -105,7 +105,7 @@ it('throws validation error for invalid callback url', function () {
         amount: 1000,
         callbackUrl: 'not-a-url',
     ));
-})->throws(InvalidArgumentException::class, 'callbackUrl must be a valid URL');
+})->throws(InvalidArgumentException::class);
 
 it('handles a valid kbzpay callback', function () {
     $orderId = fake()->uuid();

@@ -2,6 +2,7 @@
 
 namespace Laranex\LaravelMyanmarPayments\Data\Request;
 
+use Illuminate\Support\Facades\Validator;
 use InvalidArgumentException;
 use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
 
@@ -13,20 +14,24 @@ class KbzPayRequestPaymentData implements RequestPaymentData
         public readonly string $callbackUrl,
         public readonly string $currency = 'MMK',
         public readonly string $nonceStr = '',
-    ) {}
+    ) {
+        $this->validate();
+    }
 
     public function validate(): void
     {
-        if ($this->transactionId === '') {
-            throw new InvalidArgumentException('transactionId is required.');
-        }
+        $validator = Validator::make([
+            'transactionId' => $this->transactionId,
+            'amount' => $this->amount,
+            'callbackUrl' => $this->callbackUrl,
+        ], [
+            'transactionId' => ['required'],
+            'amount' => ['integer', 'min:0'],
+            'callbackUrl' => ['required', 'url'],
+        ]);
 
-        if ($this->amount < 0) {
-            throw new InvalidArgumentException('amount cannot be negative.');
-        }
-
-        if (! filter_var($this->callbackUrl, FILTER_VALIDATE_URL)) {
-            throw new InvalidArgumentException('callbackUrl must be a valid URL.');
+        if ($validator->fails()) {
+            throw new InvalidArgumentException(implode(PHP_EOL, $validator->errors()->all()));
         }
     }
 }
