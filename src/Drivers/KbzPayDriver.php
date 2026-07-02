@@ -9,7 +9,6 @@ use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\HandlePaymentResult;
 use Laranex\LaravelMyanmarPayments\Data\Request\KbzPayRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\RequestPaymentResult;
-use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
 use Laranex\LaravelMyanmarPayments\Enums\KbzPayTradeType;
 use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 use Laranex\LaravelMyanmarPayments\Exceptions\PaymentException;
@@ -109,11 +108,11 @@ class KbzPayDriver implements PaymentDriver
         };
     }
 
-    public function getPaymentStatus(string $status): HandlePaymentStatus
+    public function getPaymentStatus(string $status): bool
     {
         return match ($status) {
-            'PAY_SUCCESS' => HandlePaymentStatus::Successful,
-            'PAY_FAIL' => HandlePaymentStatus::Failed,
+            'PAY_SUCCESS' => true,
+            'PAY_FAIL' => false,
             default => throw new PaymentException("unknown status: $status"),
         };
     }
@@ -136,7 +135,7 @@ class KbzPayDriver implements PaymentDriver
         $status = $this->getPaymentStatus($data['trade_status']);
 
         return new HandlePaymentResult(
-            status: $status,
+            successful: $this->getPaymentStatus($data['trade_status']),
             transactionId: $data['kbz_tran_no'],
             raw: $data,
         );

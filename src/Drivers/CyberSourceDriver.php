@@ -9,7 +9,6 @@ use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\HandlePaymentResult;
 use Laranex\LaravelMyanmarPayments\Data\Request\CyberSourceRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\RequestPaymentResult;
-use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
 use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 use Laranex\LaravelMyanmarPayments\Exceptions\PaymentException;
 use Laranex\LaravelMyanmarPayments\Exceptions\SignatureVerificationException;
@@ -73,11 +72,11 @@ class CyberSourceDriver implements PaymentDriver
         return PaymentFlow::FormBased;
     }
 
-    public function getPaymentStatus(string $status): HandlePaymentStatus
+    public function getPaymentStatus(string $status): bool
     {
         return match ($status) {
-            'ACCEPT' => HandlePaymentStatus::Successful,
-            'DECLINE' => HandlePaymentStatus::Failed,
+            'ACCEPT' => true,
+            'DECLINE' => false,
             default => throw new PaymentException("unknown status: $status"),
         };
     }
@@ -94,7 +93,7 @@ class CyberSourceDriver implements PaymentDriver
         }
 
         return new HandlePaymentResult(
-            status: $this->getPaymentStatus($payload['decision']),
+            successful: $this->getPaymentStatus($payload['decision']),
             transactionId: $payload['transaction_id'],
             raw: $payload,
         );

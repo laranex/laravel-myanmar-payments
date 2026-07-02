@@ -2,7 +2,6 @@
 
 use Laranex\LaravelMyanmarPayments\Data\Request\AyaPayRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\Request\KbzPayRequestPaymentData;
-use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
 use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 use Laranex\LaravelMyanmarPayments\Exceptions\SignatureVerificationException;
 
@@ -59,7 +58,7 @@ it('handles a valid aya pay callback', function () {
         'checkSum' => $checkSum,
     ]);
 
-    expect($result->status)->toBe(HandlePaymentStatus::Successful)
+    expect($result->successful)->toBeTrue()
         ->and($result->transactionId)->toBe('AYA_TXN_002');
 });
 

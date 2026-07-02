@@ -4,7 +4,6 @@ namespace Laranex\LaravelMyanmarPayments\Contracts;
 
 use Laranex\LaravelMyanmarPayments\Data\HandlePaymentResult;
 use Laranex\LaravelMyanmarPayments\Data\RequestPaymentResult;
-use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
 use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 
 interface PaymentDriver
@@ -15,5 +14,5 @@ interface PaymentDriver
 
     public function getPaymentFlow(): PaymentFlow;
 
-    public function getPaymentStatus(string $status): HandlePaymentStatus;
+    public function getPaymentStatus(string $status): bool;
 }

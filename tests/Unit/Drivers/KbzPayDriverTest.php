@@ -3,7 +3,6 @@
 use Illuminate\Support\Facades\Http;
 use Laranex\LaravelMyanmarPayments\Data\Request\KbzPayRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\Request\WaveMoneyRequestPaymentData;
-use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
 use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 use Laranex\LaravelMyanmarPayments\Exceptions\SignatureVerificationException;
 
@@ -126,7 +125,7 @@ it('handles a valid kbzpay callback', function () {
 
     $result = app('myanmar-payments')->driver('kbzpay.pwa')->handleCallback(['Request' => $payload]);
 
-    expect($result->status)->toBe(HandlePaymentStatus::Successful)
+    expect($result->successful)->toBeTrue()
         ->and($result->transactionId)->toBe('KBZ_TXN_001');
 });
 

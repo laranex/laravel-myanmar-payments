@@ -2,7 +2,6 @@
 
 use Laranex\LaravelMyanmarPayments\Data\Request\CyberSourceRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\Request\KbzPayRequestPaymentData;
-use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
 use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 use Laranex\LaravelMyanmarPayments\Exceptions\SignatureVerificationException;
 
@@ -52,7 +51,7 @@ it('handles a successful cybersource callback', function () {
         array_merge($fields, ['signature' => $signature])
     );
 
-    expect($result->status)->toBe(HandlePaymentStatus::Successful)
+    expect($result->successful)->toBeTrue()
         ->and($result->transactionId)->toBe('CS_TXN_001');
 });
 
@@ -66,8 +65,8 @@ it('throws SignatureVerificationException on invalid cybersource callback signat
 
 it('handles a declined cybersource callback', function () {
     $secretKey = 'TEST_CS_SECRET_KEY';
-    $signedFieldNames = 'decision,signed_field_names';
-    $fields = ['decision' => 'DECLINE', 'signed_field_names' => $signedFieldNames];
+    $signedFieldNames = 'decision,transaction_id,signed_field_names';
+    $fields = ['decision' => 'DECLINE', 'transaction_id' => '', 'signed_field_names' => $signedFieldNames];
     $parts = array_map(fn ($k) => "$k={$fields[$k]}", explode(',', $signedFieldNames));
     $signature = base64_encode(hash_hmac('sha256', implode(',', $parts), $secretKey, true));
 
@@ -75,5 +74,5 @@ it('handles a declined cybersource callback', function () {
         array_merge($fields, ['signature' => $signature])
     );
 
-    expect($result->status)->toBe(HandlePaymentStatus::Failed);
+    expect($result->successful)->toBeFalse();
 });
