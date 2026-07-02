@@ -102,11 +102,11 @@ class AyaPayDriver implements PaymentDriver
             throw new SignatureVerificationException('AYA Pay callback checksum verification failed.', raw: $payload);
         }
 
-        $paymentStatus = $this->getPaymentStatus($decoded['transactionStatus'] ?? '');
+        $paymentStatus = $this->getPaymentStatus($decoded['transactionStatus']);
 
         return new HandlePaymentResult(
             status: $paymentStatus,
-            transactionId: $decoded['transactionId'] ?? '',
+            transactionId: $decoded['transactionId'],
             raw: $decoded,
         );
     }
