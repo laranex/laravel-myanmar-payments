@@ -133,11 +133,11 @@ class KbzPayDriver implements PaymentDriver
             throw new SignatureVerificationException('KBZ Pay callback signature verification failed.', raw: $payload);
         }
 
-        $status = $this->getPaymentStatus($data['trade_status'] ?? '');
+        $status = $this->getPaymentStatus($data['trade_status']);
 
         return new HandlePaymentResult(
             status: $status,
-            transactionId: $data['kbz_tran_no'] ?? '',
+            transactionId: $data['kbz_tran_no'],
             raw: $data,
         );
     }
