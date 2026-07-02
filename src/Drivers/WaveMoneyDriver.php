@@ -9,7 +9,6 @@ use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\HandlePaymentResult;
 use Laranex\LaravelMyanmarPayments\Data\Request\WaveMoneyRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\RequestPaymentResult;
-use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
 use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 use Laranex\LaravelMyanmarPayments\Exceptions\ApiException;
 use Laranex\LaravelMyanmarPayments\Exceptions\PaymentException;
@@ -83,15 +82,15 @@ class WaveMoneyDriver implements PaymentDriver
         return PaymentFlow::RedirectBased;
     }
 
-    public function getPaymentStatus(string $status): HandlePaymentStatus
+    public function getPaymentStatus(string $status): bool
     {
         return match (true) {
-            $status == 'PAYMENT_CONFIRMED' => HandlePaymentStatus::Successful,
+            $status === 'PAYMENT_CONFIRMED' => true,
             in_array($status, [
                 'PAYMENT_FAILED',
                 'TRANSACTION_TIMED_OUT',
                 'SCHEDULER_TRANSACTION_TIMED_OUT',
-            ]) => HandlePaymentStatus::Failed,
+            ]) => false,
             default => throw new PaymentException("unknown status: $status"),
         };
     }
@@ -123,8 +122,8 @@ class WaveMoneyDriver implements PaymentDriver
         }
 
         return new HandlePaymentResult(
-            status: $this->getPaymentStatus($status),
-            transactionId: $payload['transactionId'],
+            successful: $this->getPaymentStatus($status),
+            transactionId: $payload['transactionId'] ?? '',
             raw: $payload,
         );
     }

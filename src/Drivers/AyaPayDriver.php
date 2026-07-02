@@ -9,7 +9,6 @@ use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\HandlePaymentResult;
 use Laranex\LaravelMyanmarPayments\Data\Request\AyaPayRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\RequestPaymentResult;
-use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
 use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 use Laranex\LaravelMyanmarPayments\Exceptions\PaymentException;
 use Laranex\LaravelMyanmarPayments\Exceptions\SignatureVerificationException;
@@ -71,11 +70,11 @@ class AyaPayDriver implements PaymentDriver
         return PaymentFlow::FormBased;
     }
 
-    public function getPaymentStatus(string $status): HandlePaymentStatus
+    public function getPaymentStatus(string $status): bool
     {
         return match ($status) {
-            'SUCCESS' => HandlePaymentStatus::Successful,
-            'FAILED' => HandlePaymentStatus::Failed,
+            'SUCCESS' => true,
+            'FAILED' => false,
             default => throw new PaymentException("unknown status: $status"),
         };
     }
@@ -102,10 +101,8 @@ class AyaPayDriver implements PaymentDriver
             throw new SignatureVerificationException('AYA Pay callback checksum verification failed.', raw: $payload);
         }
 
-        $paymentStatus = $this->getPaymentStatus($decoded['transactionStatus']);
-
         return new HandlePaymentResult(
-            status: $paymentStatus,
+            successful: $this->getPaymentStatus($decoded['transactionStatus']),
             transactionId: $decoded['transactionId'],
             raw: $decoded,
         );

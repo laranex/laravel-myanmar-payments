@@ -3,7 +3,6 @@
 use Illuminate\Support\Facades\Http;
 use Laranex\LaravelMyanmarPayments\Data\Request\KbzPayRequestPaymentData;
 use Laranex\LaravelMyanmarPayments\Data\Request\WaveMoneyRequestPaymentData;
-use Laranex\LaravelMyanmarPayments\Enums\HandlePaymentStatus;
 use Laranex\LaravelMyanmarPayments\Enums\PaymentFlow;
 use Laranex\LaravelMyanmarPayments\Exceptions\ApiException;
 use Laranex\LaravelMyanmarPayments\Exceptions\PaymentException;
@@ -161,7 +160,7 @@ it('handles a valid wave money callback', function () {
         'hashValue' => $hashValue,
     ]);
 
-    expect($result->status)->toBe(HandlePaymentStatus::Successful)
+    expect($result->successful)->toBeTrue()
         ->and($result->transactionId)->toBe('WAVE_TXN_123');
 });
 
@@ -193,7 +192,7 @@ it('returns failed status for non-confirmed wave money callback', function () {
         'hashValue' => $hashValue,
     ]);
 
-    expect($result->status)->toBe(HandlePaymentStatus::Failed);
+    expect($result->successful)->toBeFalse();
 });
 
 it('returns failed status for timed out wave money callback', function () {
@@ -218,7 +217,7 @@ it('returns failed status for timed out wave money callback', function () {
         'hashValue' => $hashValue,
     ]);
 
-    expect($result->status)->toBe(HandlePaymentStatus::Failed);
+    expect($result->successful)->toBeFalse();
 });
 
 it('throws on unknown wave money callback status', function () {
