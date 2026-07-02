@@ -2,46 +2,50 @@
 
 namespace Laranex\LaravelMyanmarPayments\Data\Request;
 
+use Illuminate\Support\Facades\Validator;
 use InvalidArgumentException;
 use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
 
 class WaveMoneyRequestPaymentData implements RequestPaymentData
 {
+    public readonly string $merchantReferenceId;
+
+    public readonly int $amount;
+
     public function __construct(
-        public readonly string $transactionId,
-        public readonly string $callbackUrl,
-        public readonly string $frontendUrl,
+        public readonly string $orderId,
+        public readonly string $backendResultUrl,
+        public readonly string $frontendResultUrl,
         public readonly string $description,
-        /** @var array<array{name: string, amount: int}> */
         public readonly array $items = [],
-    ) {}
+        ?int $amount = null,
+        ?string $merchantReferenceId = null,
+    ) {
+        $this->validate();
+        $this->merchantReferenceId = $merchantReferenceId ?? $this->orderId;
+        $this->amount = $amount ?? array_sum(array_column($this->items, 'amount'));
+    }
 
     public function validate(): void
     {
-        if ($this->transactionId === '') {
-            throw new InvalidArgumentException('transactionId is required.');
-        }
+        $validator = Validator::make([
+            'orderId' => $this->orderId,
+            'backendResultUrl' => $this->backendResultUrl,
+            'frontendResultUrl' => $this->frontendResultUrl,
+            'description' => $this->description,
+            'items' => $this->items,
+        ], [
+            'orderId' => ['required'],
+            'backendResultUrl' => ['required', 'url'],
+            'frontendResultUrl' => ['required', 'url'],
+            'description' => ['required'],
+            'items' => ['required', 'array', 'min:1'],
+            'items.*.name' => ['required', 'string'],
+            'items.*.amount' => ['required', 'integer', 'gt:0'],
+        ]);
 
-        if (! filter_var($this->callbackUrl, FILTER_VALIDATE_URL)) {
-            throw new InvalidArgumentException('callbackUrl must be a valid URL.');
-        }
-
-        if (! filter_var($this->frontendUrl, FILTER_VALIDATE_URL)) {
-            throw new InvalidArgumentException('frontendUrl must be a valid URL.');
-        }
-
-        if ($this->description === '') {
-            throw new InvalidArgumentException('description is required.');
-        }
-
-        if (empty($this->items)) {
-            throw new InvalidArgumentException('at least one item is required.');
-        }
-
-        foreach ($this->items as $index => $item) {
-            if (! isset($item['name'], $item['amount']) || ! is_string($item['name']) || ! is_int($item['amount'])) {
-                throw new InvalidArgumentException('$items['.$index.'] is invalid, must be ["name" => "string", "amount" => "integer"]');
-            }
+        if ($validator->fails()) {
+            throw new InvalidArgumentException(implode(PHP_EOL, $validator->errors()->all()));
         }
     }
 }

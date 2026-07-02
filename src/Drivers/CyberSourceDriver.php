@@ -23,8 +23,6 @@ class CyberSourceDriver implements PaymentDriver
             throw new InvalidArgumentException('expects '.CyberSourceRequestPaymentData::class.', got '.get_class($data));
         }
 
-        $data->validate();
-
         $profileId = $this->config['profile_id'];
         $accessKey = $this->config['access_key'];
         $secretKey = $this->config['secret_key'];
@@ -72,7 +70,7 @@ class CyberSourceDriver implements PaymentDriver
         return PaymentFlow::FormBased;
     }
 
-    public function getPaymentStatus(string $status): bool
+    public function isSuccessful(string $status): bool
     {
         return match ($status) {
             'ACCEPT' => true,
@@ -93,7 +91,7 @@ class CyberSourceDriver implements PaymentDriver
         }
 
         return new HandlePaymentResult(
-            successful: $this->getPaymentStatus($payload['decision']),
+            successful: $this->isSuccessful($payload['decision']),
             transactionId: $payload['transaction_id'],
             raw: $payload,
         );

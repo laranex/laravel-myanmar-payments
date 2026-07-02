@@ -14,5 +14,5 @@ interface PaymentDriver
 
     public function getPaymentFlow(): PaymentFlow;
 
-    public function getPaymentStatus(string $status): bool;
+    public function isSuccessful(string $status): bool;
 }

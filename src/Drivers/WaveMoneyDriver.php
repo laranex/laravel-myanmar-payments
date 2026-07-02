@@ -24,37 +24,30 @@ class WaveMoneyDriver implements PaymentDriver
             throw new InvalidArgumentException('initiation failed. expects '.WaveMoneyRequestPaymentData::class.', got '.get_class($data));
         }
 
-        $data->validate();
-
         $merchantId = $this->config['merchant_id'];
         $secretKey = $this->config['secret_key'];
         $baseUrl = $this->config['base_url'];
         $timeToLive = $this->config['time_to_live_in_seconds'];
         $merchantName = $this->config['merchant_name'];
 
-        $frontendUrl = $data->frontendUrl;
-        $description = $data->description;
-        $merchantReferenceId = $data->transactionId;
-        $amount = array_sum(array_column($data->items, 'amount'));
-
         $hash = hash_hmac('sha256', implode('', [
             $timeToLive,
             $merchantId,
-            $data->transactionId,
-            $amount,
-            $data->callbackUrl,
-            $merchantReferenceId,
+            $data->orderId,
+            $data->amount,
+            $data->backendResultUrl,
+            $data->merchantReferenceId,
         ]), $secretKey);
 
         $response = Http::acceptJson()->post("$baseUrl/payment", [
             'time_to_live_in_seconds' => $timeToLive,
             'merchant_id' => $merchantId,
-            'order_id' => $data->transactionId,
-            'merchant_reference_id' => $merchantReferenceId,
-            'frontend_result_url' => $frontendUrl,
-            'backend_result_url' => $data->callbackUrl,
-            'amount' => $amount,
-            'payment_description' => $description,
+            'order_id' => $data->orderId,
+            'merchant_reference_id' => $data->merchantReferenceId,
+            'frontend_result_url' => $data->frontendResultUrl,
+            'backend_result_url' => $data->backendResultUrl,
+            'amount' => $data->amount,
+            'payment_description' => $data->description,
             'merchant_name' => $merchantName,
             'items' => json_encode($data->items),
             'hash' => $hash,
@@ -72,7 +65,7 @@ class WaveMoneyDriver implements PaymentDriver
             flow: PaymentFlow::RedirectBased,
             value: $redirectUrl,
             originalValue: $redirectUrl,
-            transactionId: $data->transactionId,
+            transactionId: $data->orderId,
             raw: $responseData,
         );
     }
@@ -82,7 +75,7 @@ class WaveMoneyDriver implements PaymentDriver
         return PaymentFlow::RedirectBased;
     }
 
-    public function getPaymentStatus(string $status): bool
+    public function isSuccessful(string $status): bool
     {
         return match (true) {
             $status === 'PAYMENT_CONFIRMED' => true,
@@ -122,8 +115,8 @@ class WaveMoneyDriver implements PaymentDriver
         }
 
         return new HandlePaymentResult(
-            successful: $this->getPaymentStatus($status),
-            transactionId: $payload['transactionId'] ?? '',
+            successful: $this->isSuccessful($status),
+            transactionId: $payload['orderId'],
             raw: $payload,
         );
     }

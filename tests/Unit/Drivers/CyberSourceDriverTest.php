@@ -32,7 +32,7 @@ it('throws validation error for invalid callback url', function () {
         amount: 5000,
         callbackUrl: 'not-a-url',
     ));
-})->throws(InvalidArgumentException::class, 'callbackUrl must be a valid URL');
+})->throws(InvalidArgumentException::class);
 
 it('handles a successful cybersource callback', function () {
     $orderId = fake()->uuid();

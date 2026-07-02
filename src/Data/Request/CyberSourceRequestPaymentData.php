@@ -2,6 +2,7 @@
 
 namespace Laranex\LaravelMyanmarPayments\Data\Request;
 
+use Illuminate\Support\Facades\Validator;
 use InvalidArgumentException;
 use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
 
@@ -17,16 +18,22 @@ class CyberSourceRequestPaymentData implements RequestPaymentData
         public readonly string $cancelUrl = '',
         public readonly string $transactionUuid = '',
         public readonly string $referenceNumber = '',
-    ) {}
+    ) {
+        $this->validate();
+    }
 
     public function validate(): void
     {
-        if ($this->transactionId === '') {
-            throw new InvalidArgumentException('transactionId is required.');
-        }
+        $validator = Validator::make([
+            'transactionId' => $this->transactionId,
+            'callbackUrl' => $this->callbackUrl,
+        ], [
+            'transactionId' => ['required'],
+            'callbackUrl' => ['required', 'url'],
+        ]);
 
-        if (! filter_var($this->callbackUrl, FILTER_VALIDATE_URL)) {
-            throw new InvalidArgumentException('callbackUrl must be a valid URL.');
+        if ($validator->fails()) {
+            throw new InvalidArgumentException(implode(PHP_EOL, $validator->errors()->all()));
         }
     }
 }

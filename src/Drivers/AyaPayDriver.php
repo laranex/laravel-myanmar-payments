@@ -23,8 +23,6 @@ class AyaPayDriver implements PaymentDriver
             throw new InvalidArgumentException('expects '.AyaPayRequestPaymentData::class.', got '.get_class($data));
         }
 
-        $data->validate();
-
         $appKey = $this->config['app_key'];
         $appSecret = $this->config['app_secret'];
         $baseUrl = $this->config['base_url'];
@@ -70,7 +68,7 @@ class AyaPayDriver implements PaymentDriver
         return PaymentFlow::FormBased;
     }
 
-    public function getPaymentStatus(string $status): bool
+    public function isSuccessful(string $status): bool
     {
         return match ($status) {
             'SUCCESS' => true,
@@ -102,7 +100,7 @@ class AyaPayDriver implements PaymentDriver
         }
 
         return new HandlePaymentResult(
-            successful: $this->getPaymentStatus($decoded['transactionStatus']),
+            successful: $this->isSuccessful($decoded['transactionStatus']),
             transactionId: $decoded['transactionId'],
             raw: $decoded,
         );

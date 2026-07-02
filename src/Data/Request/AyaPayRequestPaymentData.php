@@ -2,6 +2,7 @@
 
 namespace Laranex\LaravelMyanmarPayments\Data\Request;
 
+use Illuminate\Support\Facades\Validator;
 use InvalidArgumentException;
 use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
 
@@ -15,20 +16,24 @@ class AyaPayRequestPaymentData implements RequestPaymentData
         public readonly string $frontendUrl = '',
         public readonly string $description = '',
         public readonly array $userRefs = [],
-    ) {}
+    ) {
+        $this->validate();
+    }
 
     public function validate(): void
     {
-        if ($this->transactionId === '') {
-            throw new InvalidArgumentException('transactionId is required.');
-        }
+        $validator = Validator::make([
+            'transactionId' => $this->transactionId,
+            'method' => $this->method,
+            'userRefs' => $this->userRefs,
+        ], [
+            'transactionId' => ['required'],
+            'method' => ['required'],
+            'userRefs' => ['array', 'max:5'],
+        ]);
 
-        if ($this->method === '') {
-            throw new InvalidArgumentException('method is required.');
-        }
-
-        if (count($this->userRefs) > 5) {
-            throw new InvalidArgumentException('a maximum of 5 user reference fields are allowed.');
+        if ($validator->fails()) {
+            throw new InvalidArgumentException(implode(PHP_EOL, $validator->errors()->all()));
         }
     }
 }
