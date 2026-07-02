@@ -137,7 +137,7 @@ class KbzPayDriver implements PaymentDriver
 
         return new HandlePaymentResult(
             status: $status,
-            transactionId: $data['kbz_tran_no'] ?? null,
+            transactionId: $data['kbz_tran_no'] ?? '',
             raw: $data,
         );
     }

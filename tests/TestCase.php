@@ -33,7 +33,7 @@ class TestCase extends OrchestraTestCase
             'secret_key' => 'TEST_WAVE_SECRET',
         ]);
 
-        $app['config']->set('myanmar-payments.aya_pgw', [
+        $app['config']->set('myanmar-payments.aya_pay', [
             'base_url' => 'https://uat.ayapay.test',
             'app_key' => 'TEST_AYA_APP_KEY',
             'app_secret' => 'TEST_AYA_APP_SECRET',

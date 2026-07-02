@@ -5,12 +5,11 @@ namespace Laranex\LaravelMyanmarPayments\Data\Request;
 use InvalidArgumentException;
 use Laranex\LaravelMyanmarPayments\Contracts\RequestPaymentData;
 
-class AyaPgwRequestPaymentData implements RequestPaymentData
+class AyaPayRequestPaymentData implements RequestPaymentData
 {
     public function __construct(
         public readonly string $transactionId,
         public readonly int $amount,
-        public readonly string $channel,
         public readonly string $method,
         public readonly int $currencyCode = 104,
         public readonly string $frontendUrl = '',
@@ -22,10 +21,6 @@ class AyaPgwRequestPaymentData implements RequestPaymentData
     {
         if ($this->transactionId === '') {
             throw new InvalidArgumentException('transactionId is required.');
-        }
-
-        if ($this->channel === '') {
-            throw new InvalidArgumentException('channel is required.');
         }
 
         if ($this->method === '') {
