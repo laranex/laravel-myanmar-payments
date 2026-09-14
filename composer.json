@@ -5,7 +5,7 @@
         "laranex",
         "laravel-myanmar-payments",
         "laravel-wave-money",
-        "laravel-2c2p"
+        "laravel-yoma-mmqr"
     ],
     "homepage": "https://github.com/laranex/laravel-myanmar-payments",
     "license": "MIT",
@@ -18,8 +18,7 @@
         }
     ],
     "require": {
-        "php": "^7.4|^8.0",
-        "firebase/php-jwt": "^v6.3.1"
+        "php": "^7.4|^8.0"
     },
     "require-dev": {
 
