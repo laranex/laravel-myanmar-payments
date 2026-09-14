@@ -24,25 +24,6 @@ return [
         ],
         "qr" => []
     ],
-    "2c2p" => [
-        "base_url" => env("2C2P_BASE_URL", "https://sandbox-pgw.2c2p.com/payment/4.1"),
-        "merchants" => [
-
-            "default" => "MMK",
-
-            "MMK" => [
-                "secret_key" => env("2C2P_MMK_SECRET_KEY"),
-                "merchant_id" => env("2C2P_MMK_MERCHANT_ID"),
-                "currency_code" => "MMK"
-            ],
-
-            "USD" => [
-                "secret_key" => env("2C2P_USD_SECRET_KEY"),
-                "merchant_id" => env("2C2P_USD_MERCHANT_ID"),
-                "currency_code" => "USD"
-            ]
-        ]
-    ],
     "cyber_source" => [
         "base_url" => env("CYBER_SOURCE_BASE_URL", ""),
         "profile_id" => env("CYBER_SOURCE_PROFILE_ID", ""),
@@ -53,5 +34,13 @@ return [
         "base_url" => env("AYA_PGW_BASE_URL", ""),
         "app_key" => env("AYA_PGW_APP_KEY", ""),
         "app_secret" => env("AYA_PGW_APP_SECRET", "")
+    ],
+    "yoma_mmqr" => [
+        "base_url" => env("YOMA_MMQR_BASE_URL", "https://devapi.yomabank.net"),
+        "api_version" => env("YOMA_MMQR_API_VERSION", "v1rc"),
+        "merchant_id" => env("YOMA_MMQR_MERCHANT_ID", ""),
+        "client_id" => env("YOMA_MMQR_CLIENT_ID", ""),
+        "client_secret" => env("YOMA_MMQR_CLIENT_SECRET", ""),
+        "webhook_secret" => env("YOMA_MMQR_WEBHOOK_SECRET", "")
     ],
 ];
