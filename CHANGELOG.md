@@ -25,14 +25,20 @@ All notable changes to `laravel-myanmar-payments` will be documented in this fil
        php artisan vendor:publish --tag="laravel-myanmar-payments"
       ```
 
-### Unreleased
+### 2.2.6
 
 - Removed 2C2P support
   - The `2c2p` channel, its config block and the `firebase/php-jwt` dependency are gone
   - Remove the `2C2P_*` variables from your .env
 - Added Yoma MMQR support via the `yoma_mmqr` channel
   - Checkout an order, generate its MMQR, enquire the payment status and verify callback signatures
-  - Add the `YOMA_MMQR_*` variables to your .env, then re-publish the config. The webhook hash key and the webhook secret are two separate credentials
+  - Add the `YOMA_MMQR_*` variables to your .env, then re-publish the config
      ```
      php artisan vendor:publish --tag="laravel-myanmar-payments"
     ```
+
+### 2.2.7
+
+- Yoma MMQR callbacks are verified with the dedicated webhook hash key Yoma issues, not the client secret
+  - Add `YOMA_MMQR_WEBHOOK_HASHKEY` to your .env and re-publish the config. It is a separate credential from `YOMA_MMQR_WEBHOOK_SECRET`, and `verifySignature()` now throws when it is missing
+- Yoma MMQR callback fields are read from the JSON body Yoma posts, which was previously ignored
