@@ -32,7 +32,7 @@ All notable changes to `laravel-myanmar-payments` will be documented in this fil
   - Remove the `2C2P_*` variables from your .env
 - Added Yoma MMQR support via the `yoma_mmqr` channel
   - Checkout an order, generate its MMQR, enquire the payment status and verify callback signatures
-  - Add the `YOMA_MMQR_*` variables to your .env, then re-publish the config
+  - Add the `YOMA_MMQR_*` variables to your .env, then re-publish the config. The webhook hash key and the webhook secret are two separate credentials
      ```
      php artisan vendor:publish --tag="laravel-myanmar-payments"
     ```
