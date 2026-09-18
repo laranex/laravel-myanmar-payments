@@ -41,6 +41,7 @@ return [
         "merchant_id" => env("YOMA_MMQR_MERCHANT_ID", ""),
         "client_id" => env("YOMA_MMQR_CLIENT_ID", ""),
         "client_secret" => env("YOMA_MMQR_CLIENT_SECRET", ""),
-        "webhook_secret" => env("YOMA_MMQR_WEBHOOK_SECRET", "")
+        "webhook_secret" => env("YOMA_MMQR_WEBHOOK_SECRET", ""),
+        "webhook_hashkey" => env("YOMA_MMQR_WEBHOOK_HASHKEY", ""),
     ],
 ];

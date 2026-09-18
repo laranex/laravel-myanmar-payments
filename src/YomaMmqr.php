@@ -136,25 +136,37 @@ class YomaMmqr
     /**
      * Verify the hash of a callback sent by the Yoma payment hub.
      *
-     * The hashed payload is "orderNumber=xxxx&status=xxxx" signed with the order number
-     * prefixed to the client secret. The X-Webhook-Secret header is asserted as well when a
-     * webhook secret is configured, and left unchecked when it is not, since Yoma only sends
-     * that header to merchants who shared a secret with them.
+     * The hash is an HMAC-SHA256 of "orderNumber=xxxx&status=xxxx" keyed with the order number
+     * prefixed to the webhook hash key, which is how the payment hub computes it. That hash key
+     * and the webhook secret are two separate credentials issued by Yoma: the hash key only
+     * ever signs, while the webhook secret is echoed back in the X-Webhook-Secret header, which
+     * is asserted as well when one is configured and left unchecked when it is not.
+     *
+     * @throws Exception
      */
     public function verifySignature(Request $request): bool
     {
-        $orderNumber = (string)$request->get("orderNumber");
-        $status = (string)$request->get("status");
-        $webhookSecret = (string)config("laravel-myanmar-payments.yoma_mmqr.webhook_secret");
+        $config = config("laravel-myanmar-payments.yoma_mmqr");
+        $hashKey = (string)$config["webhook_hashkey"];
+        $webhookSecret = (string)$config["webhook_secret"];
+
+        /**
+         * Without a hash key the signing key collapses to the order number alone, which is
+         * public, so a missing key must fail loudly rather than verify forgeable callbacks.
+         */
+        if (!$hashKey) {
+            throw new Exception("Invalid Yoma MMQR Webhook Hash Key");
+        }
 
         if ($webhookSecret && !hash_equals($webhookSecret, (string)$request->header("X-Webhook-Secret"))) {
             return false;
         }
 
-        $secretKey = $orderNumber . config("laravel-myanmar-payments.yoma_mmqr.client_secret");
-        $hash = hash_hmac("sha256", "orderNumber=$orderNumber&status=$status", $secretKey);
+        $orderNumber = (string)$request->input("orderNumber");
+        $status = (string)$request->input("status");
+        $hash = hash_hmac("sha256", "orderNumber=$orderNumber&status=$status", $orderNumber . $hashKey);
 
-        return hash_equals($hash, (string)$request->get("hashValue"));
+        return hash_equals($hash, (string)$request->input("hashValue"));
     }
 
     /**

@@ -150,11 +150,13 @@ YOMA_MMQR_MERCHANT_ID=
 YOMA_MMQR_CLIENT_ID=
 YOMA_MMQR_CLIENT_SECRET=
 YOMA_MMQR_WEBHOOK_SECRET=
+YOMA_MMQR_WEBHOOK_HASHKEY=
 ```
 
-The merchant id and the client id & secret all come from Yoma. The base url and api version
-above are the UAT pair, swap both for the production pair Yoma hands over. The webhook secret
-is the one you shared with Yoma for callbacks, see below, and can be left unset.
+The merchant id, the client id & secret and the webhook hash key all come from Yoma. The base
+url and api version above are the UAT pair, swap both for the production pair Yoma hands over.
+The webhook secret is the one you shared with Yoma for callbacks, see below, and can be left
+unset; the webhook hash key is a separate credential and is required to verify callbacks.
 
 ### Paying an order
 
@@ -233,18 +235,14 @@ Route::post("/payments/yoma-mmqr/callback", function (Request $request) {
 })->withoutMiddleware(VerifyCsrfToken::class);
 ```
 
-The hash covers the payload `orderNumber=xxxx&status=xxxx` signed with the order number
-prefixed to the client secret.
+The hash is HMAC-SHA256 of the payload `orderNumber=xxxx&status=xxxx`, keyed with the order
+number prefixed to the webhook hash key, as Yoma's payment hub computes it. `verifySignature()`
+throws when no hash key is configured, since without one the signature would be forgeable.
 
 Set `YOMA_MMQR_WEBHOOK_SECRET` to the secret you shared with Yoma and the `X-Webhook-Secret`
 header of the callback is asserted against it as well, before the hash is even computed. Leave
 it unset and the header is not checked, which is what merchants who never shared a secret with
 Yoma want, since none is sent to them.
-
-> **Unverified:** the MMQR specification names neither the hash algorithm nor the `hashkey` it
-> signs with, and Yoma only issues a client id and a client secret. `verifySignature()`
-> therefore assumes HMAC-SHA256 with the client secret as that `hashkey`. Confirm it against a
-> real callback before relying on it, a wrong guess fails every callback silently.
 
 ### Changelog
 
