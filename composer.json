@@ -1,20 +1,22 @@
 {
+    "$schema": "https://getcomposer.org/schema.json",
     "name": "laranex/laravel-myanmar-payments",
-    "description": "A Laravel package for Myanmar payment gateways with a unified API",
+    "description": "Laravel integration for Myanmar payment gateways: KBZ Pay, Wave Money, AYA Pay, Yoma MMQR and CyberSource",
     "keywords": [
-        "laravel-myanmar-payments",
-        "laranex",
         "laravel",
+        "laranex",
+        "laravel-myanmar-payments",
         "myanmar",
         "payments",
         "kbzpay",
         "wavemoney",
         "ayapay",
+        "yoma",
+        "mmqr",
         "cybersource"
     ],
     "homepage": "https://laranex.vercel.app/laravel-myanmar-payments",
     "license": "MIT",
-    "type": "library",
     "authors": [
         {
             "name": "Nay Thu Khant",
@@ -24,33 +26,72 @@
     ],
     "require": {
         "php": "^8.1",
-        "illuminate/http": "^10.0|^11.0|^12.0|^13.0",
-        "illuminate/support": "^10.0|^11.0|^12.0|^13.0"
+        "illuminate/http": "^10.0||^11.0||^12.0||^13.0",
+        "illuminate/support": "^10.0||^11.0||^12.0||^13.0",
+        "laranex/php-myanmar-payments": "@dev"
     },
     "require-dev": {
-        "laravel/pint": "^1.0",
-        "orchestra/testbench": "^8.0|^9.0|^10.0|^11.0",
-        "pestphp/pest": "^3.0|^4.0"
+        "larastan/larastan": "^2.9||^3.9",
+        "laravel/pint": "^1.29",
+        "orchestra/testbench": "^8.0||^9.0||^10.0||^11.0",
+        "pestphp/pest": "^3.0||^4.6",
+        "pestphp/pest-plugin-laravel": "^3.0||^4.1",
+        "pestphp/pest-plugin-type-coverage": "^3.0||^4.0",
+        "phpstan/extension-installer": "^1.4"
     },
     "autoload": {
         "psr-4": {
-            "Laranex\\LaravelMyanmarPayments\\": "src"
+            "Laranex\\LaravelMyanmarPayments\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Laranex\\LaravelMyanmarPayments\\Tests\\": "tests"
+            "Laranex\\LaravelMyanmarPayments\\Tests\\": "tests/",
+            "Workbench\\App\\": "workbench/app/",
+            "Workbench\\Database\\Factories\\": "workbench/database/factories/",
+            "Workbench\\Database\\Seeders\\": "workbench/database/seeders/"
         }
     },
     "scripts": {
-        "test": "vendor/bin/pest",
-        "format": "vendor/bin/pint"
-    },
-    "config": {
-        "allow-plugins": {
-            "pestphp/pest-plugin": true
-        },
-        "sort-packages": true
+        "post-autoload-dump": [
+            "@clear",
+            "@prepare"
+        ],
+        "prepare": [
+            "@php vendor/bin/testbench package:discover --ansi"
+        ],
+        "build": [
+            "@php vendor/bin/testbench workbench:build --ansi"
+        ],
+        "serve": [
+            "Composer\\Config::disableProcessTimeout",
+            "@build",
+            "@php vendor/bin/testbench serve --ansi"
+        ],
+        "lint": [
+            "vendor/bin/pint --parallel"
+        ],
+        "lint:check": [
+            "vendor/bin/pint --parallel --test"
+        ],
+        "analyse": [
+            "vendor/bin/phpstan analyse --memory-limit=1G"
+        ],
+        "test:types": [
+            "@php -d memory_limit=-1 vendor/bin/pest --type-coverage --min=100"
+        ],
+        "test:unit": [
+            "vendor/bin/pest --parallel"
+        ],
+        "test": [
+            "@analyse",
+            "@lint:check",
+            "@test:types",
+            "@test:unit"
+        ],
+        "clear": [
+            "@php vendor/bin/testbench package:purge-skeleton --ansi"
+        ]
     },
     "extra": {
         "laravel": {
@@ -58,10 +99,27 @@
                 "Laranex\\LaravelMyanmarPayments\\MyanmarPaymentsServiceProvider"
             ],
             "aliases": {
-                "MyanmarPayments": "Laranex\\LaravelMyanmarPayments\\MyanmarPaymentsFacade"
+                "MyanmarPayments": "Laranex\\LaravelMyanmarPayments\\Facades\\MyanmarPayments"
             }
         }
     },
+    "config": {
+        "sort-packages": true,
+        "allow-plugins": {
+            "pestphp/pest-plugin": true,
+            "phpstan/extension-installer": true,
+            "php-http/discovery": true
+        }
+    },
     "minimum-stability": "stable",
-    "prefer-stable": true
+    "prefer-stable": true,
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../php-myanmar-payments",
+            "options": {
+                "symlink": true
+            }
+        }
+    ]
 }
