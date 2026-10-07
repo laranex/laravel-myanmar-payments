@@ -24,7 +24,7 @@ Use this skill when a Laravel application takes payments through KBZ Pay, Wave M
 
 ### 2. Start a payment
 
-- build the gateway's data object, e.g. `new KbzPayPaymentData(orderId:, amount:, callbackUrl:)`; it throws `InvalidPaymentDataException` with `errors()` on bad input
+- build the gateway's data object, e.g. `new KbzPayPaymentData(orderId:, amount:, callbackUrl:)`; amounts are `int` or `Laranex\PhpMyanmarPayments\Amount` (`Amount::kyat(1000)`, `Amount::parse('1000.50')`), never floats — only KBZ Pay (≤2 decimals) and CyberSource accept decimals; it throws `InvalidPaymentDataException` with `errors()` on bad input
 - call the gateway through the facade `Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments` and act on the typed result:
   - `RedirectPayment` (`kbzPay()->pwa()`, `waveMoney()->initiate()`): `redirect($payment->url)`
   - `FormPayment` (`ayaPay()->initiate()`, `cyberSource()->initiate()`): `redirect($payment->autoSubmitUrl)`
