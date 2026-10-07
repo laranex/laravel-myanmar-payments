@@ -45,12 +45,13 @@ php artisan vendor:publish --tag="myanmar-payments-config"
 ```php
 use Illuminate\Http\Request;
 use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
+use Laranex\PhpMyanmarPayments\Amount;
 use Laranex\PhpMyanmarPayments\KbzPay\KbzPayPaymentData;
 
 // Start a payment: one result class per flow (RedirectPayment, FormPayment, QrPayment, AppPayment)
 $payment = MyanmarPayments::kbzPay()->pwa(new KbzPayPaymentData(
     orderId: 'ORDER_1',
-    amount: 1000,
+    amount: 1000, // or Amount::parse('1000.50'): KBZ accepts up to 2 decimals
     callbackUrl: route('payments.kbz.callback'),
 ));
 

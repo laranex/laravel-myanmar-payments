@@ -13,6 +13,7 @@ use Laranex\LaravelMyanmarPayments\Gateways\KbzPay;
 use Laranex\LaravelMyanmarPayments\Gateways\WaveMoney;
 use Laranex\LaravelMyanmarPayments\Gateways\YomaMmqr;
 use Laranex\LaravelMyanmarPayments\MyanmarPayments as MyanmarPaymentsManager;
+use Laranex\PhpMyanmarPayments\Amount;
 use Laranex\PhpMyanmarPayments\AyaPay\AyaPayMethod;
 use Laranex\PhpMyanmarPayments\AyaPay\AyaPayPaymentData;
 use Laranex\PhpMyanmarPayments\Exceptions\ApiException;
@@ -104,3 +105,11 @@ it('names the missing setting when a gateway is not configured', function () {
 
     MyanmarPayments::waveMoney();
 })->throws(ConfigurationException::class, '[merchant_id]');
+
+it('sends exact decimal amounts where the gateway allows them', function () {
+    Http::fake(['*/precreate' => Http::response(['Response' => ['result' => 'SUCCESS', 'code' => '0', 'prepay_id' => 'PREPAY1', 'qrCode' => 'qr']])]);
+
+    MyanmarPayments::kbzPay()->qr(new KbzPayPaymentData('ORDER_1', Amount::parse('1000.50'), 'https://shop.test/kbz/callback'));
+
+    Http::assertSent(fn (HttpRequest $request): bool => $request['Request']['biz_content']['total_amount'] === '1000.50');
+});
