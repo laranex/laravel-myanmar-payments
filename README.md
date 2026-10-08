@@ -49,7 +49,7 @@ Route::post('/payments/kbz/callback', function (Request $request) {
     $callback = MyanmarPayments::kbzPay()->handleCallback($request);
 
     if ($callback->isSuccessful()) {
-        // compare $callback->amount with your order, then fulfil $callback->orderId
+        // compare $callback->amount with your order, then fulfill $callback->orderId
     }
 
     return MyanmarPayments::acknowledge($callback); // KBZ Pay expects a plain "success"
