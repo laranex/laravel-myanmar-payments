@@ -17,8 +17,9 @@ Use this skill when a Laravel application takes payments through KBZ Pay, Wave M
 
 ## Workflow
 
-### 1. Configure the gateway
+### 1. Install and configure the gateway
 
+- `composer require laranex/laravel-myanmar-payments` (v4: PHP 8.1+, Laravel 10 to 13); the service provider and the `MyanmarPayments` alias are auto-discovered
 - set only the env keys of the gateways in use (`KBZ_PAY_*`, `WAVE_MONEY_*`, `AYA_PAY_*`, `YOMA_MMQR_*`, `CYBER_SOURCE_*`); `*_SANDBOX=false` for production
 - publish the config only when it must change: `php artisan vendor:publish --tag="myanmar-payments-config"`
 
@@ -35,7 +36,7 @@ Use this skill when a Laravel application takes payments through KBZ Pay, Wave M
 ### 3. Handle the callback
 
 - register a POST route without CSRF middleware
-- `$callback = MyanmarPayments::<gateway>()->handleCallback($request)` verifies the signature and throws `SignatureVerificationException` when it fails
+- `$callback = MyanmarPayments::<gateway>()->handleCallback($request)` verifies the signature and throws `SignatureVerificationException` when it fails; AYA's browser return URL is checked with `ayaPay()->verifyRedirect($request)`
 - check `$callback->status` (`PaymentStatus`), compare `$callback->amount` with the order, make fulfilment idempotent
 - `return MyanmarPayments::acknowledge($callback);` so the gateway stops retrying
 
