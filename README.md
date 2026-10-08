@@ -58,6 +58,10 @@ Route::post('/payments/kbz/callback', function (Request $request) {
 
 The other gateways work the same way through `waveMoney()`, `ayaPay()`, `yomaMmqr()` and `cyberSource()`; see the [documentation](https://laranex.vercel.app/laravel-myanmar-payments) for every flow, status check and callback.
 
+## AI agent skill
+
+The package ships a [Laravel Boost](https://github.com/laravel/boost) skill in [`resources/boost/skills/laravel-myanmar-payments-development`](resources/boost/skills/laravel-myanmar-payments-development) that teaches coding agents how to start payments, verify callbacks and acknowledge them with this package. Boost picks it up automatically when you run `php artisan boost:install` (or `boost:update`).
+
 ## Testing
 
 ```bash
