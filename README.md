@@ -5,7 +5,7 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/laranex/laravel-myanmar-payments.svg?style=flat-square)](https://packagist.org/packages/laranex/laravel-myanmar-payments)
 [![License](https://img.shields.io/packagist/l/laranex/laravel-myanmar-payments.svg?style=flat-square)](LICENSE.md)
 
-Laravel integration for Myanmar payment gateways (KBZ Pay, Wave Money, AYA Payment Gateway, Yoma MMQR and CyberSource), with typed requests and results and callbacks verified straight from the Laravel `Request`. Built for humans and AI agents.
+Laravel integration for Myanmar payment gateways: KBZ Pay, Wave Money, AYA Pay, Yoma MMQR and CyberSource. Built on PHP Myanmar Payments. Facade and config file, Request-based callbacks, an auto-submit form route and Http::fake in tests. Built for humans and AI agents.
 
 ## Documentation
 
