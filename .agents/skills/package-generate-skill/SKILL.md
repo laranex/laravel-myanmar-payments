@@ -17,8 +17,8 @@ Keep the package's bundled Boost skill accurate, concise, and focused on helping
 1. Inspect the package implementation before editing the Boost skill: service provider, facades, public classes, commands, config, routes, migrations, events, views, publish tags, and tests.
 2. Inspect package documentation: `README.md`, contributing docs, examples, and changelog entries that describe user-facing behavior.
 3. Identify the public integration surface only. Include install, configure, publish, command, route, facade, helper, middleware, event, and testing guidance only when the package actually exposes it.
-4. Update `resources/boost/skills/*/SKILL.md` with practical adoption steps, references, examples, and anti-patterns for Laravel app developers using the package.
-5. Preserve front matter, package metadata, and the Boost skill structure: description, primary goal, workflow, references, examples, and anti-patterns.
+4. Update `resources/boost/skills/laravel-myanmar-payments/SKILL.md` (front matter `name: laravel-myanmar-payments`) with how to use the package in a Laravel app, then copy it unchanged to `skills/laravel-myanmar-payments/SKILL.md` for `npx skills`; `tests/Unit/AgentSkillTest.php` fails when the two copies differ.
+5. Preserve front matter and package metadata, and keep the usage-only structure: When to use, Install, Configure, Use (one subsection per feature), Test your app, Avoid. No sections about maintaining or releasing the package.
 6. Validate that the Boost skill does not describe internals as public API and does not document features that are not implemented.
 
 ## Writing Rules
@@ -31,7 +31,8 @@ Keep the package's bundled Boost skill accurate, concise, and focused on helping
 
 ## References
 
-- `resources/boost/skills/`
+- `resources/boost/skills/laravel-myanmar-payments/SKILL.md`
+- `skills/laravel-myanmar-payments/SKILL.md`
 - `src/*ServiceProvider.php`
 - `src/Facades/`
 - `src/Console/Commands/`
