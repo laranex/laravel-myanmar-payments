@@ -1,0 +1,112 @@
+name: release
+
+# Pushing a version tag (v4.0.0, v4.0.0-dev.1, ...) releases the package: the
+# test suite runs, then the GitHub release is created from the matching
+# CHANGELOG.md section. Packagist reads versions from the tags themselves.
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    name: Validate tag
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    outputs:
+      version: ${{ steps.tag.outputs.version }}
+      prerelease: ${{ steps.tag.outputs.prerelease }}
+
+    steps:
+      - name: Validate the tag
+        id: tag
+        run: |
+          semver='^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?(\+[0-9A-Za-z-]+(\.[0-9A-Za-z-]+)*)?$'
+          if [[ ! "$GITHUB_REF_NAME" =~ $semver ]]; then
+            echo "::error::Tag '$GITHUB_REF_NAME' is not a semantic version (expected vMAJOR.MINOR.PATCH or vMAJOR.MINOR.PATCH-PRERELEASE)."
+            exit 1
+          fi
+
+          version="${GITHUB_REF_NAME#v}"
+          prerelease=false
+          [[ "${version%%+*}" == *-* ]] && prerelease=true
+
+          {
+            echo "version=$version"
+            echo "prerelease=$prerelease"
+          } >> "$GITHUB_OUTPUT"
+          echo "Releasing $GITHUB_REF_NAME (prerelease: $prerelease)"
+
+  tests:
+    name: Tests
+    uses: ./.github/workflows/tests.yml
+
+  release:
+    name: Release
+    needs: [validate, tests]
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Create the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.validate.outputs.version }}
+          PRERELEASE: ${{ needs.validate.outputs.prerelease }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            echo "The $GITHUB_REF_NAME release already exists; skipping."
+            exit 0
+          fi
+
+          # Release notes: the CHANGELOG.md section whose heading is "## v1.2.3" or
+          # "## v1.2.3 - <date>", up to the next "## " heading.
+          notes="$RUNNER_TEMP/release-notes.md"
+          if [[ -f CHANGELOG.md ]]; then
+            awk -v tag="$GITHUB_REF_NAME" -v version="$VERSION" '
+              /^## / { if (found) exit; found = ($2 == tag || $2 == version); next }
+              found { print }
+            ' CHANGELOG.md > "$notes"
+          fi
+
+          args=(--verify-tag --title "$GITHUB_REF_NAME")
+          if [[ -f "$notes" ]] && grep -q '[^[:space:]]' "$notes"; then
+            args+=(--notes-file "$notes")
+          else
+            echo "::warning::CHANGELOG.md has no '## $GITHUB_REF_NAME' section; using generated release notes."
+            args+=(--generate-notes)
+          fi
+          [[ "$PRERELEASE" == true ]] && args+=(--prerelease)
+
+          gh release create "$GITHUB_REF_NAME" "${args[@]}"
+
+      - name: Notify Packagist
+        env:
+          PACKAGIST_USERNAME: ${{ secrets.PACKAGIST_USERNAME }}
+          PACKAGIST_TOKEN: ${{ secrets.PACKAGIST_TOKEN }}
+          REPOSITORY_URL: ${{ github.server_url }}/${{ github.repository }}
+        run: |
+          # Optional: Packagist also picks the tag up through its GitHub hook. The
+          # ping only makes the new version appear immediately.
+          if [[ -z "$PACKAGIST_USERNAME" || -z "$PACKAGIST_TOKEN" ]]; then
+            echo "PACKAGIST_USERNAME / PACKAGIST_TOKEN are not set; skipping."
+            exit 0
+          fi
+
+          if ! curl --silent --show-error --fail-with-body --request POST \
+            --header 'Content-Type: application/json' \
+            --data "{\"repository\":{\"url\":\"$REPOSITORY_URL\"}}" \
+            "https://packagist.org/api/update-package?username=$PACKAGIST_USERNAME&apiToken=$PACKAGIST_TOKEN"; then
+            echo "::warning::The Packagist update request failed; Packagist will still pick the tag up through its GitHub hook."
+          fi
