@@ -4,13 +4,10 @@ on:
   push:
     branches:
       - '**'
-    tags:
-      - '**'
   pull_request:
-  release:
-    types:
-      - published
   workflow_dispatch:
+  # release.yml runs the suite before publishing a tag.
+  workflow_call:
 
 permissions:
   contents: read
