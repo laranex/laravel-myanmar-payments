@@ -20,12 +20,17 @@ For significant changes, please open an issue first so we can discuss the approa
 
 ## Setup
 
-This package depends on [`laranex/php-myanmar-payments`](https://github.com/laranex/php-myanmar-payments), which `composer.json` resolves through a path repository at `../php-myanmar-payments`. Clone both repositories side by side:
+This package depends on [`laranex/php-myanmar-payments`](https://github.com/laranex/php-myanmar-payments), installed from Packagist like any other dependency:
 
 ```bash
-git clone git@github.com:laranex/php-myanmar-payments.git
 git clone git@github.com:<you>/laravel-myanmar-payments.git
 cd laravel-myanmar-payments
+```
+
+To change both packages together, clone `php-myanmar-payments` next to this one and point Composer at it for the session (don't commit the change):
+
+```bash
+composer config repositories.core '{"type": "path", "url": "../php-myanmar-payments", "options": {"versions": {"laranex/php-myanmar-payments": "4.x-dev"}}}'
 ```
 
 Then install the dev dependencies:
