@@ -73,19 +73,6 @@ jobs:
           tools: composer:v2
           coverage: none
 
-      - name: Checkout laranex/php-myanmar-payments
-        shell: bash
-        env:
-          LARANEX_PACKAGES_TOKEN: ${{ secrets.LARANEX_PACKAGES_TOKEN }}
-        run: |
-          if [ -z "$LARANEX_PACKAGES_TOKEN" ]; then
-            echo "::error title=Missing LARANEX_PACKAGES_TOKEN::laranex/php-myanmar-payments is private. Add a LARANEX_PACKAGES_TOKEN secret with read access to it (see .github/CONTRIBUTING.md); forked pull requests do not receive secrets."
-            exit 1
-          fi
-          repo="https://x-access-token:${LARANEX_PACKAGES_TOKEN}@github.com/laranex/php-myanmar-payments.git"
-          git clone --depth 1 --branch dev "$repo" ../php-myanmar-payments \
-            || git clone --depth 1 --branch main "$repo" ../php-myanmar-payments
-
       - name: Install dependencies
         run: |
           composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
