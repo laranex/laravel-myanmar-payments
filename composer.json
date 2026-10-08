@@ -40,11 +40,11 @@
         "symfony/http-kernel": "^6.2||^7.0||^8.0"
     },
     "require-dev": {
-        "larastan/larastan": "^2.9.14||^3.9",
+        "larastan/larastan": "^2.11||^3.9",
         "laravel/pint": "^1.20||^1.29",
-        "orchestra/testbench": "^8.0||^9.0||^10.0||^11.0",
+        "orchestra/testbench": "^8.29||^9.7||^10.0||^11.0",
         "pestphp/pest": "^2.36||^3.0||^4.6",
-        "pestphp/pest-plugin-type-coverage": "^2.8.7||^3.0||^4.0",
+        "pestphp/pest-plugin-type-coverage": "^2.8.7||^3.6.1||^4.0",
         "phpstan/extension-installer": "^1.4"
     },
     "autoload": {

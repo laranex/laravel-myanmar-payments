@@ -24,7 +24,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
         php: [8.1, 8.2, 8.3, 8.4, 8.5]
@@ -65,7 +65,10 @@ jobs:
         uses: shivammathur/setup-php@f3e473d116dcccaddc5834248c87452386958240 # v2
         with:
           php-version: ${{ matrix.php }}
-          extensions: dom, curl, libxml, mbstring, zip, fileinfo, sqlite, pdo_sqlite, bcmath, intl
+          # FFI is disabled so the type-coverage plugin analyses files in a single
+          # process: its forked workers share one cache file whose lock gives up
+          # after 100 ms, and concurrent writes then corrupt it (ParseError).
+          extensions: dom, curl, libxml, mbstring, zip, fileinfo, sqlite, pdo_sqlite, bcmath, intl, :ffi
           ini-values: error_reporting=E_ALL
           tools: composer:v2
           coverage: none
@@ -85,8 +88,11 @@ jobs:
 
       - name: Install dependencies
         run: |
-          composer require "laravel/framework:${{ matrix.laravel }}" "orchestra/testbench:${{ matrix.testbench }}" --no-interaction --no-update
-          composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress --no-scripts
+          composer require "laravel/framework:${{ matrix.laravel }}" --no-interaction --no-update
+          # --with intersects the lane's Testbench line with the floor in composer.json
+          # (e.g. ^8.29), where `composer require` would replace it with 8.* and let
+          # prefer-lowest pick a Testbench release this package does not support.
+          composer update --${{ matrix.stability }} --prefer-dist --no-interaction --no-progress --no-scripts --with "orchestra/testbench:${{ matrix.testbench }}"
           composer run prepare
 
       - name: PHPStan
