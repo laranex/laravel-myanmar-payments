@@ -13,6 +13,7 @@ The rewrite that was developed as v3 was never released; it ships as v4.0.0.
 - One typed request class per gateway and one result class per flow, replacing `RequestPaymentResult::$value`
 - Callbacks accept the Laravel `Request` directly and return `PaymentCallback` with a gateway-independent `PaymentStatus`; `MyanmarPayments::acknowledge()` returns the response each gateway expects
 - Added AYA `services()`, AYA `verifyRedirect()` and status checks for KBZ Pay, AYA and Yoma MMQR
+- Callback, return and cancel URLs only need to be valid absolute http or https URLs (no HTTPS-only or port-443 rule); gateways may still require HTTPS in production
 - Wave Money's sandbox (`WAVE_MONEY_SANDBOX=true`) uses `https://preprodpayments.wavemoney.io:8107`, with checkout at `https://preprodpayments.wavemoney.io/authenticate`
 - Fixed callback verification for KBZ Pay, Wave Money and AYA against their official specifications
 - The facade moved from `Laranex\LaravelMyanmarPayments\LaravelMyanmarPaymentsFacade` (alias `LaravelMyanmarPayments`) to `Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments` (alias `MyanmarPayments`)
