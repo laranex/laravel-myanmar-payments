@@ -33,7 +33,7 @@
         "illuminate/http": "^10.0||^11.0||^12.0||^13.0",
         "illuminate/routing": "^10.0||^11.0||^12.0||^13.0",
         "illuminate/support": "^10.0||^11.0||^12.0||^13.0",
-        "laranex/php-myanmar-payments": "^4.0",
+        "laranex/php-myanmar-payments": "^4.0@dev",
         "psr/http-client": "^1.0",
         "psr/http-message": "^1.0||^2.0",
         "psr/simple-cache": "^1.0||^2.0||^3.0",
@@ -130,17 +130,5 @@
         }
     },
     "minimum-stability": "stable",
-    "prefer-stable": true,
-    "repositories": [
-        {
-            "type": "path",
-            "url": "../php-myanmar-payments",
-            "options": {
-                "symlink": true,
-                "versions": {
-                    "laranex/php-myanmar-payments": "4.0.0"
-                }
-            }
-        }
-    ]
+    "prefer-stable": true
 }

@@ -49,13 +49,3 @@ Run all tests:
 ```bash
 composer test
 ```
-
-## Continuous integration
-
-`laranex/php-myanmar-payments` is a private repository, so the `tests` workflow clones it into `../php-myanmar-payments` (branch `dev`, falling back to `main`) before installing dependencies. The workflow needs a repository (or organization) secret:
-
-| Secret | Value |
-| --- | --- |
-| `LARANEX_PACKAGES_TOKEN` | A fine-grained personal access token (or GitHub App token) with **Contents: Read-only** access to `laranex/php-myanmar-payments`. |
-
-Without the secret the clone step fails with an explanatory error. Pull requests from forks do not receive repository secrets, so their CI runs fail at that step; a maintainer re-runs them from a branch in this repository.
