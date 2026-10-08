@@ -37,7 +37,7 @@ Use this skill when a Laravel application takes payments through KBZ Pay, Wave M
 
 - register a POST route without CSRF middleware
 - `$callback = MyanmarPayments::<gateway>()->handleCallback($request)` verifies the signature and throws `SignatureVerificationException` when it fails; AYA's browser return URL is checked with `ayaPay()->verifyRedirect($request)`
-- check `$callback->status` (`PaymentStatus`), compare `$callback->amount` with the order, make fulfilment idempotent
+- check `$callback->status` (`PaymentStatus`), compare `$callback->amount` with the order, make fulfillment idempotent
 - `return MyanmarPayments::acknowledge($callback);` so the gateway stops retrying
 
 ## Rules, References, and Templates
@@ -51,6 +51,6 @@ Use this skill when a Laravel application takes payments through KBZ Pay, Wave M
 
 ## Anti-patterns
 
-- do not trust return URLs or query strings as proof of payment; fulfil from the verified callback or a status check
+- do not trust return URLs or query strings as proof of payment; fulfill from the verified callback or a status check
 - do not treat `PaymentStatus::Pending` or `Unknown` as paid
 - do not reuse a Wave `merchantReferenceId` or re-run Yoma `initiate()` for the same order

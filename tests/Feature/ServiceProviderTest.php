@@ -58,7 +58,7 @@ it('round-trips a form payment through the encrypted auto-submit link', function
         ->and(app(FormPaymentUrl::class)->resolve('not-a-payload'))->toBeNull();
 });
 
-it('honours the configured ttl for form links', function () {
+it('honors the configured ttl for form links', function () {
     config()->set('myanmar-payments.form_route.ttl_minutes', 5);
     app()->forgetInstance(FormPaymentUrl::class);
 
