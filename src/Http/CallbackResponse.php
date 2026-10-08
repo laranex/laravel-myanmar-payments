@@ -19,7 +19,7 @@ class CallbackResponse implements Responsable
     /**
      * @param  Request  $request
      */
-    public function toResponse($request): Response
+    public function toResponse(mixed $request): Response
     {
         $acknowledgement = $this->callback->acknowledgement();
 

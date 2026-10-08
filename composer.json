@@ -26,17 +26,19 @@
     ],
     "require": {
         "php": "^8.1",
+        "guzzlehttp/guzzle": "^7.5",
+        "illuminate/contracts": "^10.0||^11.0||^12.0||^13.0",
         "illuminate/http": "^10.0||^11.0||^12.0||^13.0",
+        "illuminate/routing": "^10.0||^11.0||^12.0||^13.0",
         "illuminate/support": "^10.0||^11.0||^12.0||^13.0",
         "laranex/php-myanmar-payments": "@dev"
     },
     "require-dev": {
-        "larastan/larastan": "^2.9||^3.9",
-        "laravel/pint": "^1.29",
+        "larastan/larastan": "^2.9.14||^3.9",
+        "laravel/pint": "^1.20||^1.29",
         "orchestra/testbench": "^8.0||^9.0||^10.0||^11.0",
-        "pestphp/pest": "^3.0||^4.6",
-        "pestphp/pest-plugin-laravel": "^3.0||^4.1",
-        "pestphp/pest-plugin-type-coverage": "^3.0||^4.0",
+        "pestphp/pest": "^2.36||^3.0||^4.6",
+        "pestphp/pest-plugin-type-coverage": "^2.8.7||^3.0||^4.0",
         "phpstan/extension-installer": "^1.4"
     },
     "autoload": {
@@ -69,10 +71,10 @@
             "@php vendor/bin/testbench serve --ansi"
         ],
         "lint": [
-            "vendor/bin/pint --parallel"
+            "vendor/bin/pint"
         ],
         "lint:check": [
-            "vendor/bin/pint --parallel --test"
+            "vendor/bin/pint --test"
         ],
         "analyse": [
             "vendor/bin/phpstan analyse --memory-limit=1G"
@@ -109,6 +111,16 @@
             "pestphp/pest-plugin": true,
             "phpstan/extension-installer": true,
             "php-http/discovery": true
+        },
+        "policy": {
+            "advisories": {
+                "ignore": {
+                    "laravel/framework": "Dev-only: the package's test matrix installs older Laravel lines; apps resolve their own framework version"
+                },
+                "ignore-id": {
+                    "PKSA-z3gr-8qht-p93v": "Dev-only PHPUnit advisory; needed for the PHP 8.1 test lane"
+                }
+            }
         }
     },
     "minimum-stability": "stable",
