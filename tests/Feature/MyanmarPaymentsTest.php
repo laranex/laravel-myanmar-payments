@@ -16,9 +16,12 @@ use Laranex\LaravelMyanmarPayments\MyanmarPayments as MyanmarPaymentsManager;
 use Laranex\PhpMyanmarPayments\Amount;
 use Laranex\PhpMyanmarPayments\AyaPay\AyaPayMethod;
 use Laranex\PhpMyanmarPayments\AyaPay\AyaPayPaymentData;
+use Laranex\PhpMyanmarPayments\Enums\PaymentStatus;
 use Laranex\PhpMyanmarPayments\Exceptions\ApiException;
 use Laranex\PhpMyanmarPayments\Exceptions\ConfigurationException;
 use Laranex\PhpMyanmarPayments\KbzPay\KbzPayPaymentData;
+use Laranex\PhpMyanmarPayments\Results\PaymentCallback;
+use Laranex\PhpMyanmarPayments\YomaMmqr\YomaMmqrPaymentData;
 
 it('resolves every gateway through the facade', function () {
     expect(app(MyanmarPaymentsManager::class))->toBe(app(MyanmarPaymentsManager::class))
@@ -112,4 +115,51 @@ it('sends exact decimal amounts where the gateway allows them', function () {
     MyanmarPayments::kbzPay()->qr(new KbzPayPaymentData('ORDER_1', Amount::parse('1000.50'), 'https://shop.test/kbz/callback'));
 
     Http::assertSent(fn (HttpRequest $request): bool => $request['Request']['biz_content']['total_amount'] === '1000.50');
+});
+
+it('sends every gateway API call through the Laravel HTTP client', function () {
+    $enquiry = ['merchOrderId' => 'ORDER123', 'tranId' => 'T1', 'amount' => '1000', 'statusCode' => '00'];
+
+    Http::preventStrayRequests();
+    Http::fake([
+        '*/precreate' => Http::response(['Response' => ['result' => 'SUCCESS', 'code' => '0', 'prepay_id' => 'PREPAY1', 'qrCode' => 'kbz-qr']]),
+        '*/queryorder' => Http::response(['Response' => ['result' => 'SUCCESS', 'code' => '0', 'merch_order_id' => 'ORDER_1', 'mm_order_id' => 'MM1', 'trade_status' => 'PAY_SUCCESS', 'total_amount' => '1000']]),
+        '*/v1/payment/services' => Http::response(['status' => '00', 'data' => [['name' => 'AYA Pay', 'key' => 'aya_pay', 'methods' => ['QR', 'NOTI']]]]),
+        '*/v1/payment/enquiry' => Http::response(['status' => '00', 'data' => [
+            'payload' => base64_encode((string) json_encode($enquiry)),
+            'checkSum' => hash_hmac('sha256', implode(':', $enquiry), 'aya-secret'),
+        ]]),
+        '*/token' => Http::response(['access_token' => 'token-1', 'expires_in' => 28800]),
+        '*/payment/checkout' => Http::response(['checkOutStatus' => true]),
+        '*/qr/generate' => Http::response(['refLabel' => 'REF1', 'qrString' => base64_encode('png')]),
+        '*/payment/check-status' => Http::response(['refLabel' => 'REF1', 'paymentStatus' => 'SUCCESS']),
+    ]);
+
+    $kbz = new KbzPayPaymentData('ORDER_1', 1000, 'https://shop.test/kbz/callback');
+    $services = MyanmarPayments::ayaPay()->services();
+    $yoma = MyanmarPayments::yomaMmqr()->initiate(new YomaMmqrPaymentData('ORDER_7', 1000, 'Order 7'));
+
+    expect(MyanmarPayments::kbzPay()->qr($kbz)->qrString)->toBe('kbz-qr')
+        ->and(MyanmarPayments::kbzPay()->app($kbz)->toArray()['orderId'])->toBe('ORDER_1')
+        ->and(MyanmarPayments::kbzPay()->status('ORDER_1')->isSuccessful())->toBeTrue()
+        ->and($services)->toHaveCount(1)
+        ->and($services[0]->key)->toBe('aya_pay')
+        ->and($services[0]->supports(AyaPayMethod::Qr))->toBeTrue()
+        ->and(MyanmarPayments::ayaPay()->status('ORDER123')->gatewayReference)->toBe('T1')
+        ->and($yoma->reference)->toBe('REF1')
+        ->and($yoma->qrImageDataUri())->toBe('data:image/png;base64,'.base64_encode('png'))
+        ->and(MyanmarPayments::yomaMmqr()->renewQr('ORDER_7')->reference)->toBe('REF1')
+        ->and(MyanmarPayments::yomaMmqr()->status('REF1')->isSuccessful())->toBeTrue();
+
+    Http::assertSent(fn (HttpRequest $request): bool => str_ends_with($request->url(), '/payment/checkout')
+        && $request->hasHeader('Authorization', 'Bearer token-1')
+        && $request['orderNumber'] === 'ORDER_7');
+});
+
+it('lets apps mock the facade to test their own callback handling', function () {
+    $callback = new PaymentCallback(orderId: 'ORDER_1', status: PaymentStatus::Successful, gatewayStatus: 'PAY_SUCCESS', amount: '1000');
+
+    MyanmarPayments::shouldReceive('kbzPay->handleCallback')->andReturn($callback);
+
+    expect(MyanmarPayments::kbzPay()->handleCallback(Request::create('/kbz/callback', 'POST'))->isSuccessful())->toBeTrue();
 });
