@@ -102,7 +102,7 @@ Route::post('/payments/kbz/callback', function (Request $request) {
 ### Check status and handle errors
 
 - `kbzPay()->status($orderId)`, `ayaPay()->status($orderId)` and `yomaMmqr()->status($reference)` return a `PaymentStatusResult` with `status` and `isSuccessful()`.
-- Statuses are the `PaymentStatus` enum: `Successful`, `Pending`, `Failed`, `Cancelled`, `Expired`, `Unknown`.
+- Statuses are the `PaymentStatus` enum: `Successful`, `Pending`, `Failed`, `Canceled`, `Expired`, `Unknown`.
 - Gateway errors throw `ApiException` (`gatewayCode`, `gatewayMessage`, `httpStatus`, `raw`); catch `PaymentException` for every package error.
 
 ## Test your app
