@@ -55,7 +55,7 @@ class MyanmarPaymentsServiceProvider extends ServiceProvider
         }
 
         $this->publishes([
-            __DIR__.'/../config/myanmar-payments.php' => config_path('myanmar-payments.php'),
+            __DIR__.'/../config/myanmar-payments.php' => $this->app->configPath('myanmar-payments.php'),
         ], ['myanmar-payments', 'myanmar-payments-config']);
     }
 
