@@ -23,7 +23,7 @@ class CallbackResponse implements Responsable
      */
     public function toResponse(mixed $request): Response
     {
-        $acknowledgement = $this->callback?->acknowledgement() ?? new Acknowledgement;
+        $acknowledgement = $this->callback->acknowledgement ?? Acknowledgement::default();
 
         return new Response($acknowledgement->body, $acknowledgement->status, $acknowledgement->headers);
     }

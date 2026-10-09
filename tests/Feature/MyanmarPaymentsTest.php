@@ -106,8 +106,12 @@ it('names the missing setting when a gateway is not configured', function () {
     app()->forgetInstance(MyanmarPaymentsManager::class);
     MyanmarPayments::clearResolvedInstances();
 
-    MyanmarPayments::waveMoney();
-})->throws(ConfigurationException::class, '[merchant_id]');
+    expect(fn () => MyanmarPayments::waveMoney())->toThrow(function (ConfigurationException $exception) {
+        expect($exception->getMessage())->toContain('[merchant_id]')
+            ->and($exception->gateway)->toBe('wave_money')
+            ->and($exception->key)->toBe('merchant_id');
+    });
+});
 
 it('sends exact decimal amounts where the gateway allows them', function () {
     Http::fake(['*/precreate' => Http::response(['Response' => ['result' => 'SUCCESS', 'code' => '0', 'prepay_id' => 'PREPAY1', 'qrCode' => 'qr']])]);
