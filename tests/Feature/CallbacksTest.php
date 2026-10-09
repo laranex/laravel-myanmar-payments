@@ -146,3 +146,39 @@ it('forwards form encoded gateway requests with their headers through the HTTP c
         && $request['merchant_id'] === 'wave'
         && $request['order_id'] === 'ORDER_1');
 });
+
+it('resolves every gateway by its callback route name', function () {
+    expect(MyanmarPayments::gateways())->toBe(['kbz-pay', 'wave-money', 'aya-pay', 'yoma-mmqr', 'cyber-source'])
+        ->and(MyanmarPayments::gateway('kbz-pay'))->toBe(MyanmarPayments::kbzPay())
+        ->and(MyanmarPayments::gateway('wave-money'))->toBe(MyanmarPayments::waveMoney())
+        ->and(MyanmarPayments::gateway('aya-pay'))->toBe(MyanmarPayments::ayaPay())
+        ->and(MyanmarPayments::gateway('yoma-mmqr'))->toBe(MyanmarPayments::yomaMmqr())
+        ->and(MyanmarPayments::gateway('cyber-source'))->toBe(MyanmarPayments::cyberSource());
+});
+
+it('rejects an unknown gateway name', function () {
+    MyanmarPayments::gateway('paypal');
+})->throws(InvalidArgumentException::class, 'Unknown payment gateway [paypal]; use one of kbz-pay, wave-money, aya-pay, yoma-mmqr, cyber-source.');
+
+it('verifies a callback by gateway name from one route for every gateway', function () {
+    $payload = ['orderNumber' => 'ORDER_7', 'status' => 'SUCCESS', 'hashValue' => hash_hmac('sha256', 'orderNumber=ORDER_7&status=SUCCESS', 'ORDER_7hash-key')];
+
+    Route::post('/webhooks/payments/{gateway}', fn (Request $request, string $gateway): CallbackResponse => MyanmarPayments::acknowledge(MyanmarPayments::handleCallback($gateway, $request)));
+
+    $this->postJson('/webhooks/payments/yoma-mmqr', $payload, ['X-Webhook-Secret' => 'hook-secret'])->assertOk();
+
+    $callback = MyanmarPayments::handleCallback('yoma-mmqr', CallbackRequest::fromArray($payload, ['X-Webhook-Secret' => 'hook-secret']));
+
+    expect($callback->orderId)->toBe('ORDER_7')
+        ->and($callback->isSuccessful())->toBeTrue();
+
+    $this->postJson('/webhooks/payments/wave-money', $payload)->assertStatus(500);
+});
+
+it('acknowledges with an empty 200 without a callback', function () {
+    $response = MyanmarPayments::acknowledge()->toResponse(Request::create('/'));
+
+    expect($response->getStatusCode())->toBe(200)
+        ->and($response->getContent())->toBe('')
+        ->and($response->headers->get('Content-Type'))->toBe('text/plain');
+});
