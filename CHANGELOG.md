@@ -21,6 +21,7 @@ The rewrite that was developed as v3 was never released; it ships as v4.0.0.
 - Renamed the `aya_pgw` config key to `aya_pay` (env `AYA_PAY_*`, with `AYA_PGW_*` still read as a fallback) and KBZ Pay's `base_url` / `pwa.base_redirect_url` keys to `api_url` / `pwa_url` (env `KBZ_PAY_BASE_URL` and `KBZ_PAY_PWA_BASE_REDIRECT_URL` are unchanged)
 - Removed KBZ Pay's refund query (`queryOrder()` with `$refundRequestNo`); refunds are out of scope, and `kbzPay()->status($orderId)` replaces the order query
 - AYA Pay and CyberSource return a `FormPayment` with an `autoSubmitUrl` served by the package's form route (`myanmar-payments/form`, configurable under `form_route`)
+- `PaymentStatus::Cancelled` (`'cancelled'`) from the v4 pre-releases is now `PaymentStatus::Canceled` (`'canceled'`), with no alias; gateway status literals such as Wave Money's `PAYMENT_REQUEST_CANCELLED` are unchanged
 
 ### Upgrading
 - Require PHP 8.1+ and Laravel 10+, then `composer require laranex/laravel-myanmar-payments:^4.0`.
@@ -30,3 +31,4 @@ The rewrite that was developed as v3 was never released; it ships as v4.0.0.
 - Re-publish the configuration with `php artisan vendor:publish --tag="myanmar-payments-config"` and move your credentials to the new `kbz_pay`, `wave_money`, `aya_pay`, `yoma_mmqr` and `cyber_source` keys. `AYA_PGW_*` environment variables are still read as a fallback.
 - Rename `aya_pgw` to `aya_pay`, and `kbz_pay.base_url` / `kbz_pay.pwa.base_redirect_url` to `kbz_pay.api_url` / `kbz_pay.pwa_url`, in any published or overridden config.
 - Replace `channel('kbz_pay.*')->queryOrder()` calls with `MyanmarPayments::kbzPay()->status($orderId)`; refund lookups are no longer provided.
+- Coming from `v4.0.0-alpha.1`: rename `PaymentStatus::Cancelled` to `PaymentStatus::Canceled` and update any stored `'cancelled'` status values to `'canceled'`.
