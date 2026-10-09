@@ -23,6 +23,7 @@ The rewrite that was developed as v3 was never released; it ships as v4.0.0.
 - Removed KBZ Pay's refund query (`queryOrder()` with `$refundRequestNo`); refunds are out of scope, and `kbzPay()->status($orderId)` replaces the order query
 - AYA Pay and CyberSource return a `FormPayment` with an `autoSubmitUrl` served by the package's form route (`myanmar-payments/form`, configurable under `form_route`)
 - `PaymentStatus::Cancelled` (`'cancelled'`) from the v4 pre-releases is now `PaymentStatus::Canceled` (`'canceled'`), with no alias; gateway status literals such as Wave Money's `PAYMENT_REQUEST_CANCELLED` are unchanged
+- Built on the unified php-myanmar-payments API (requires its next pre-release, `^4.0.0-alpha.3`): a callback's acknowledgement is the `$callback->acknowledgement` property and `ConfigurationException` exposes `gateway` and `key`
 - The service provider and the form route file use the application's `configPath()` and the `Config` facade instead of the `config_path()` and `config()` helpers, which only `laravel/framework` defines, so the package runs on the `illuminate/*` components it requires.
 
 ### Upgrading
