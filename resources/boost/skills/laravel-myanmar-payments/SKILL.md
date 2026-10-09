@@ -107,17 +107,20 @@ Route::post('/payments/kbz/callback', function (Request $request) {
 
 ## Test your app
 
-Gateway calls go through Laravel's HTTP client, so fake them with `Http::fake()`:
+Gateway calls go through Laravel's HTTP client, so fake them with `Http::fake()` (add `Http::preventStrayRequests()` so nothing reaches a real gateway):
 
 ```php
 use Illuminate\Support\Facades\Http;
 
+Http::preventStrayRequests();
 Http::fake(['*/precreate' => Http::response(['Response' => ['result' => 'SUCCESS', 'code' => '0', 'prepay_id' => 'PREPAY1']])]);
 
 $payment = MyanmarPayments::kbzPay()->pwa(new KbzPayPaymentData('ORDER_1', 1000, 'https://shop.test/kbz/callback'));
 ```
 
 To test your own callback handling without signed payloads, mock the facade, for example `MyanmarPayments::shouldReceive('kbzPay->handleCallback')->andReturn($callback)` with a `PaymentCallback` you build yourself.
+
+Follow `$payment->autoSubmitUrl` with `$this->get()` to assert the auto-submitting form; tampered or expired links answer `410`.
 
 ## Avoid
 
