@@ -7,7 +7,7 @@ The rewrite that was developed as v3 was never released; it ships as v4.0.0.
 ### Changed
 - Requires PHP 8.1+ and supports Laravel 10 through 13.
 - Rebuilt on the official Laravel package skeleton (Pest, PHPStan, Pint, Testbench workbench, GitHub Actions matrix).
-- Rebuilt on the framework-agnostic `laranex/php-myanmar-payments` package
+- Rebuilt on the framework-agnostic `laranex/php-myanmar-payments` package.
 - Requires `laranex/php-myanmar-payments` ^4.0, `guzzlehttp/guzzle` ^7.4 or ^8 and `guzzlehttp/psr7` ^2.1 or ^3 (Laravel 10 only suggests Guzzle; the PSR-17 factories come from `guzzlehttp/psr7` 2+)
 - Typed accessors per gateway: `MyanmarPayments::kbzPay()`, `waveMoney()`, `ayaPay()`, `yomaMmqr()`, `cyberSource()`
 - One typed request class per gateway and one result class per flow, replacing `RequestPaymentResult::$value`
