@@ -11,7 +11,8 @@ The rewrite that was developed as v3 was never released; it ships as v4.0.0.
 - Requires `laranex/php-myanmar-payments` ^4.0, `guzzlehttp/guzzle` ^7.4 or ^8 and `guzzlehttp/psr7` ^2.1 or ^3 (Laravel 10 only suggests Guzzle; the PSR-17 factories come from `guzzlehttp/psr7` 2+)
 - Typed accessors per gateway: `MyanmarPayments::kbzPay()`, `waveMoney()`, `ayaPay()`, `yomaMmqr()`, `cyberSource()`
 - One typed request class per gateway and one result class per flow, replacing `RequestPaymentResult::$value`
-- Callbacks accept the Laravel `Request` directly and return `PaymentCallback` with a gateway-independent `PaymentStatus`; `MyanmarPayments::acknowledge()` returns the response each gateway expects
+- Callbacks accept the Laravel `Request` directly and return `PaymentCallback` with a gateway-independent `PaymentStatus`; `MyanmarPayments::acknowledge()` returns the response each gateway expects (an empty 200 without a callback)
+- `MyanmarPayments::gateway($name)` and `MyanmarPayments::handleCallback($gateway, $request)` resolve a gateway by its callback route name (`kbz-pay`, `wave-money`, `aya-pay`, `yoma-mmqr`, `cyber-source`, listed by `gateways()`), so one route can serve every gateway, like goravel-myanmar-payments and nestjs-myanmar-payments
 - Added AYA `services()`, AYA `verifyRedirect()` and status checks for KBZ Pay, AYA and Yoma MMQR
 - Callback, return and cancel URLs only need to be valid absolute http or https URLs (no HTTPS-only or port-443 rule); gateways may still require HTTPS in production
 - Wave Money's sandbox (`WAVE_MONEY_SANDBOX=true`) uses `https://preprodpayments.wavemoney.io:8107`, with checkout at `https://preprodpayments.wavemoney.io/authenticate`
