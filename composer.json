@@ -1,7 +1,7 @@
 {
     "$schema": "https://getcomposer.org/schema.json",
     "name": "laranex/laravel-myanmar-payments",
-    "description": "Laravel integration for Myanmar payment gateways: KBZ Pay, Wave Money, AYA Pay, Yoma MMQR and CyberSource. Built on PHP Myanmar Payments. Facade and config file, Request-based callbacks, an auto-submit form route and Http::fake in tests.",
+    "description": "Laravel integration for Myanmar payment gateways: KBZ Pay, Wave Money, AYA Pay, Yoma MMQR and CyberSource. Built on PHP Myanmar Payments. Facade and config, verified callbacks and test fakes.",
     "keywords": [
         "laravel",
         "laranex",
