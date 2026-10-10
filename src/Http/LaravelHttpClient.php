@@ -17,7 +17,7 @@ class LaravelHttpClient implements ClientInterface
 {
     public function __construct(
         private readonly Factory $http,
-        private readonly int $timeout = 30,
+        private readonly int $timeout,
     ) {}
 
     public function sendRequest(RequestInterface $request): ResponseInterface

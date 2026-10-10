@@ -10,6 +10,7 @@ use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
 use Laranex\LaravelMyanmarPayments\Http\CallbackRequestFactory;
 use Laranex\LaravelMyanmarPayments\Http\CallbackResponse;
 use Laranex\PhpMyanmarPayments\CyberSource\CyberSourcePaymentData;
+use Laranex\PhpMyanmarPayments\CyberSource\CyberSourceTransactionType;
 use Laranex\PhpMyanmarPayments\Enums\PaymentStatus;
 use Laranex\PhpMyanmarPayments\Exceptions\SignatureVerificationException;
 use Laranex\PhpMyanmarPayments\Http\CallbackRequest;
@@ -82,7 +83,7 @@ it('verifies a Yoma MMQR callback, including its secret header, from a Laravel r
 })->throws(SignatureVerificationException::class, 'X-Webhook-Secret');
 
 it('verifies a CyberSource result post from a Laravel request and attaches the form link on initiate', function () {
-    $payment = MyanmarPayments::cyberSource()->initiate(new CyberSourcePaymentData(orderId: 'ORDER-1', amount: 1000, callbackUrl: 'https://shop.test/cs/callback'));
+    $payment = MyanmarPayments::cyberSource()->initiate(new CyberSourcePaymentData(orderId: 'ORDER-1', amount: 1000, callbackUrl: 'https://shop.test/cs/callback', currency: 'MMK', transactionType: CyberSourceTransactionType::Sale, locale: 'en-us'));
 
     expect($payment->autoSubmitUrl)->toStartWith('http://localhost/myanmar-payments/form?payload=')
         ->and($payment->fields['reference_number'])->toBe('ORDER-1');

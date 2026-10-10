@@ -16,7 +16,7 @@ class FormRouteDisabledTest extends TestCase
     {
         parent::defineEnvironment($app);
 
-        $app['config']->set('myanmar-payments.form_route', ['enabled' => false, 'path' => 'pay/form', 'middleware' => ['api'], 'ttl_minutes' => 30]);
+        $app['config']->set('myanmar-payments.form_route', ['enabled' => false, 'path' => 'pay/form', 'middleware' => ['api']]);
     }
 
     public function test_the_form_route_and_auto_submit_links_are_off_when_disabled(): void
@@ -25,7 +25,7 @@ class FormRouteDisabledTest extends TestCase
 
         $this->assertNull(Route::getRoutes()->getByName('myanmar-payments.form'));
         $this->assertNull($payment->autoSubmitUrl);
-        $this->assertSame('https://uat-pgw.ayainnovation.com/v1/payment/request', $payment->action);
+        $this->assertSame('https://pgw.ayainnovation.com/v1/payment/request', $payment->action);
         $this->get('/pay/form?payload=x')->assertNotFound();
     }
 }

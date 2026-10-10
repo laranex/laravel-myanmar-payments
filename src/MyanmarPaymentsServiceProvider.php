@@ -12,7 +12,6 @@ use Illuminate\Contracts\Routing\UrlGenerator;
 use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Support\ServiceProvider;
 use Laranex\LaravelMyanmarPayments\Http\FormPaymentUrl;
-use Laranex\LaravelMyanmarPayments\Http\LaravelHttpClient;
 
 class MyanmarPaymentsServiceProvider extends ServiceProvider
 {
@@ -26,7 +25,7 @@ class MyanmarPaymentsServiceProvider extends ServiceProvider
         $this->app->singleton(FormPaymentUrl::class, fn (Container $app): FormPaymentUrl => new FormPaymentUrl(
             $app->make(StringEncrypter::class),
             $app->make(UrlGenerator::class),
-            (int) $this->config($app, 'form_route.ttl_minutes', 30),
+            $this->config($app, 'form_route.ttl_minutes'),
             (bool) $this->config($app, 'form_route.enabled', true),
         ));
 
@@ -36,7 +35,7 @@ class MyanmarPaymentsServiceProvider extends ServiceProvider
 
             return new MyanmarPayments(
                 config: is_array($config) ? $config : [],
-                httpClient: new LaravelHttpClient($app->make(HttpFactory::class), (int) $this->config($app, 'http.timeout', 30)),
+                http: $app->make(HttpFactory::class),
                 cache: $app->make(CacheFactory::class)->store(is_string($cacheStore) ? $cacheStore : null),
                 formPaymentUrl: $app->make(FormPaymentUrl::class),
             );

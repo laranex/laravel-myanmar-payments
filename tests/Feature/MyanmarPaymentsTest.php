@@ -38,7 +38,7 @@ it('sends gateway calls through the Laravel HTTP client', function () {
     $payment = MyanmarPayments::kbzPay()->pwa(new KbzPayPaymentData('ORDER_1', 1000, 'https://shop.test/kbz/callback'));
 
     expect($payment->gatewayReference)->toBe('PREPAY1');
-    Http::assertSent(fn (HttpRequest $request): bool => $request->url() === 'http://api-uat.kbzpay.com/payment/gateway/uat/precreate'
+    Http::assertSent(fn (HttpRequest $request): bool => $request->url() === 'https://api.kbzpay.com/payment/gateway/precreate'
         && $request['Request']['biz_content']['merch_order_id'] === 'ORDER_1'
         && $request->hasHeader('Content-Type', 'application/json'));
 });
@@ -74,7 +74,7 @@ it('serves an auto-submitting form for form based gateways', function () {
     $this->get($payment->autoSubmitUrl)
         ->assertOk()
         ->assertHeader('Cache-Control', 'no-store, private')
-        ->assertSee('action="https://uat-pgw.ayainnovation.com/v1/payment/request"', false)
+        ->assertSee('action="https://pgw.ayainnovation.com/v1/payment/request"', false)
         ->assertSee('name="checkSum" value="'.$payment->fields['checkSum'].'"', false);
 });
 

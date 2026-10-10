@@ -9,14 +9,13 @@ return [
     | Gateways
     |--------------------------------------------------------------------------
     |
-    | Only the gateways you call need credentials. `sandbox` picks each
-    | gateway's UAT endpoints; set it to false and use production credentials
-    | when you go live. URL overrides are optional.
+    | Only the gateways you call need settings, and every setting of those
+    | gateways is required. Each gateway uses its production endpoints; to
+    | test against UAT, set the URL overrides to the UAT URLs.
     |
     */
 
     'kbz_pay' => [
-        'sandbox' => env('KBZ_PAY_SANDBOX', true),
         'app_id' => env('KBZ_PAY_APP_ID'),
         'app_key' => env('KBZ_PAY_APP_KEY'),
         'merchant_code' => env('KBZ_PAY_MERCHANT_CODE'),
@@ -25,35 +24,31 @@ return [
     ],
 
     'wave_money' => [
-        'sandbox' => env('WAVE_MONEY_SANDBOX', true),
         'merchant_id' => env('WAVE_MONEY_MERCHANT_ID'),
         'secret_key' => env('WAVE_MONEY_SECRET_KEY'),
-        'merchant_name' => env('WAVE_MONEY_MERCHANT_NAME', env('APP_NAME')),
-        'time_to_live_in_seconds' => env('WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS', 300),
+        'merchant_name' => env('WAVE_MONEY_MERCHANT_NAME'),
+        'time_to_live_in_seconds' => env('WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS'),
         'base_url' => env('WAVE_MONEY_BASE_URL'),
         'authenticate_url' => env('WAVE_MONEY_AUTHENTICATE_URL'),
     ],
 
     'aya_pay' => [
-        'sandbox' => env('AYA_PAY_SANDBOX', true),
         'app_key' => env('AYA_PAY_APP_KEY', env('AYA_PGW_APP_KEY')),
         'app_secret' => env('AYA_PAY_APP_SECRET', env('AYA_PGW_APP_SECRET')),
         'base_url' => env('AYA_PAY_BASE_URL', env('AYA_PGW_BASE_URL')),
     ],
 
     'yoma_mmqr' => [
-        'sandbox' => env('YOMA_MMQR_SANDBOX', true),
         'merchant_id' => env('YOMA_MMQR_MERCHANT_ID'),
         'client_id' => env('YOMA_MMQR_CLIENT_ID'),
         'client_secret' => env('YOMA_MMQR_CLIENT_SECRET'),
         'webhook_hashkey' => env('YOMA_MMQR_WEBHOOK_HASHKEY'),
         'webhook_secret' => env('YOMA_MMQR_WEBHOOK_SECRET'),
         'base_url' => env('YOMA_MMQR_BASE_URL'),
-        'api_version' => env('YOMA_MMQR_API_VERSION', 'v1rc'),
+        'api_version' => env('YOMA_MMQR_API_VERSION'),
     ],
 
     'cyber_source' => [
-        'sandbox' => env('CYBER_SOURCE_SANDBOX', true),
         'profile_id' => env('CYBER_SOURCE_PROFILE_ID'),
         'access_key' => env('CYBER_SOURCE_ACCESS_KEY'),
         'secret_key' => env('CYBER_SOURCE_SECRET_KEY'),
@@ -64,10 +59,14 @@ return [
     |--------------------------------------------------------------------------
     | HTTP
     |--------------------------------------------------------------------------
+    |
+    | Seconds before a gateway API call gives up. Required by every gateway
+    | that calls an API (all but CyberSource), as its `timeout_in_seconds`.
+    |
     */
 
     'http' => [
-        'timeout' => env('MYANMAR_PAYMENTS_HTTP_TIMEOUT', 30),
+        'timeout' => env('MYANMAR_PAYMENTS_HTTP_TIMEOUT'),
     ],
 
     /*
@@ -89,7 +88,8 @@ return [
     |
     | AYA Pay and CyberSource need the customer's browser to POST a signed
     | form. This route renders that form and submits it, so you can simply
-    | `redirect($payment->autoSubmitUrl)`. Links expire after `ttl_minutes`.
+    | `redirect($payment->autoSubmitUrl)`. Links expire after `ttl_minutes`,
+    | which is required while the route is enabled.
     |
     */
 
@@ -97,7 +97,7 @@ return [
         'enabled' => true,
         'path' => 'myanmar-payments/form',
         'middleware' => ['web'],
-        'ttl_minutes' => 30,
+        'ttl_minutes' => env('MYANMAR_PAYMENTS_FORM_TTL_MINUTES'),
     ],
 
 ];
