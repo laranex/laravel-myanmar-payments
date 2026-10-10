@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace Laranex\LaravelMyanmarPayments;
 
+use Illuminate\Http\Client\Factory as HttpFactory;
 use Illuminate\Http\Request;
 use InvalidArgumentException;
 use Laranex\LaravelMyanmarPayments\Gateways\AyaPay;
@@ -13,6 +14,7 @@ use Laranex\LaravelMyanmarPayments\Gateways\WaveMoney;
 use Laranex\LaravelMyanmarPayments\Gateways\YomaMmqr;
 use Laranex\LaravelMyanmarPayments\Http\CallbackResponse;
 use Laranex\LaravelMyanmarPayments\Http\FormPaymentUrl;
+use Laranex\LaravelMyanmarPayments\Http\LaravelHttpClient;
 use Laranex\PhpMyanmarPayments\AyaPay\AyaPayConfig;
 use Laranex\PhpMyanmarPayments\CyberSource\CyberSourceConfig;
 use Laranex\PhpMyanmarPayments\Http\CallbackRequest;
@@ -20,7 +22,6 @@ use Laranex\PhpMyanmarPayments\KbzPay\KbzPayConfig;
 use Laranex\PhpMyanmarPayments\Results\PaymentCallback;
 use Laranex\PhpMyanmarPayments\WaveMoney\WaveMoneyConfig;
 use Laranex\PhpMyanmarPayments\YomaMmqr\YomaMmqrConfig;
-use Psr\Http\Client\ClientInterface;
 use Psr\SimpleCache\CacheInterface;
 
 /**
@@ -40,10 +41,11 @@ class MyanmarPayments
 
     /**
      * @param  array<string, mixed>  $config  The `myanmar-payments` config.
+     * @param  HttpFactory  $http  Laravel's HTTP client, so `Http::fake()` and request events see gateway calls.
      */
     public function __construct(
         private readonly array $config,
-        private readonly ClientInterface $httpClient,
+        private readonly HttpFactory $http,
         private readonly CacheInterface $cache,
         private readonly FormPaymentUrl $formPaymentUrl,
     ) {}
@@ -53,7 +55,12 @@ class MyanmarPayments
      */
     public function kbzPay(): KbzPay
     {
-        return $this->kbzPay ??= new KbzPay(KbzPayConfig::fromArray($this->configFor('kbz_pay')), $this->httpClient);
+        if ($this->kbzPay === null) {
+            $config = KbzPayConfig::fromArray($this->apiConfigFor('kbz_pay'));
+            $this->kbzPay = new KbzPay($config, $this->httpClient($config->timeoutSeconds));
+        }
+
+        return $this->kbzPay;
     }
 
     /**
@@ -61,7 +68,12 @@ class MyanmarPayments
      */
     public function waveMoney(): WaveMoney
     {
-        return $this->waveMoney ??= new WaveMoney(WaveMoneyConfig::fromArray($this->configFor('wave_money')), $this->httpClient);
+        if ($this->waveMoney === null) {
+            $config = WaveMoneyConfig::fromArray($this->apiConfigFor('wave_money'));
+            $this->waveMoney = new WaveMoney($config, $this->httpClient($config->timeoutSeconds));
+        }
+
+        return $this->waveMoney;
     }
 
     /**
@@ -69,7 +81,12 @@ class MyanmarPayments
      */
     public function ayaPay(): AyaPay
     {
-        return $this->ayaPay ??= new AyaPay(AyaPayConfig::fromArray($this->configFor('aya_pay')), $this->httpClient, $this->formPaymentUrl);
+        if ($this->ayaPay === null) {
+            $config = AyaPayConfig::fromArray($this->apiConfigFor('aya_pay'));
+            $this->ayaPay = new AyaPay($config, $this->httpClient($config->timeoutSeconds), $this->formPaymentUrl);
+        }
+
+        return $this->ayaPay;
     }
 
     /**
@@ -77,7 +94,12 @@ class MyanmarPayments
      */
     public function yomaMmqr(): YomaMmqr
     {
-        return $this->yomaMmqr ??= new YomaMmqr(YomaMmqrConfig::fromArray($this->configFor('yoma_mmqr')), $this->httpClient, $this->cache);
+        if ($this->yomaMmqr === null) {
+            $config = YomaMmqrConfig::fromArray($this->apiConfigFor('yoma_mmqr'));
+            $this->yomaMmqr = new YomaMmqr($config, $this->httpClient($config->timeoutSeconds), $this->cache);
+        }
+
+        return $this->yomaMmqr;
     }
 
     /**
@@ -136,6 +158,25 @@ class MyanmarPayments
     public function acknowledge(?PaymentCallback $callback = null): CallbackResponse
     {
         return new CallbackResponse($callback);
+    }
+
+    /**
+     * A gateway's config with the shared `http.timeout` as its `timeout_in_seconds`, unless the gateway sets its own.
+     *
+     * @return array<string, mixed>
+     */
+    private function apiConfigFor(string $gateway): array
+    {
+        $config = $this->configFor($gateway);
+        $http = $this->config['http'] ?? [];
+        $config['timeout_in_seconds'] ??= is_array($http) ? ($http['timeout'] ?? null) : null;
+
+        return $config;
+    }
+
+    private function httpClient(int $timeoutSeconds): LaravelHttpClient
+    {
+        return new LaravelHttpClient($this->http, $timeoutSeconds);
     }
 
     /**
