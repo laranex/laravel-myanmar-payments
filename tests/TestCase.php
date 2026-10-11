@@ -30,7 +30,7 @@ abstract class TestCase extends Orchestra
         $app['config']->set('cache.default', 'array');
         $app['config']->set('myanmar-payments.http.timeout', 30);
         $app['config']->set('myanmar-payments.form_route.ttl_minutes', 30);
-        $app['config']->set('myanmar-payments.kbz_pay', ['app_id' => 'kp123', 'app_key' => 'secret-key', 'merchant_code' => '100001']);
+        $app['config']->set('myanmar-payments.kbz_pay', ['app_id' => 'kp123', 'app_key' => 'secret-key', 'merchant_code' => '100001', 'time_to_live_in_minutes' => 30]);
         $app['config']->set('myanmar-payments.wave_money', ['merchant_id' => 'wave', 'secret_key' => 'wave-secret', 'merchant_name' => 'Shop', 'time_to_live_in_seconds' => 300]);
         $app['config']->set('myanmar-payments.aya_pay', ['app_key' => 'app-key', 'app_secret' => 'aya-secret']);
         $app['config']->set('myanmar-payments.yoma_mmqr', ['merchant_id' => 'M001', 'client_id' => 'client', 'client_secret' => 'secret', 'webhook_hashkey' => 'hash-key', 'webhook_secret' => 'hook-secret', 'api_version' => 'v1rc']);

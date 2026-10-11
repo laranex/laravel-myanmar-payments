@@ -21,7 +21,7 @@ return [
         'merchant_code' => env('KBZ_PAY_MERCHANT_CODE'),
         'api_url' => env('KBZ_PAY_BASE_URL'),
         'pwa_url' => env('KBZ_PAY_PWA_BASE_REDIRECT_URL'),
-        'time_to_live_in_seconds' => env('KBZ_PAY_TIME_TO_LIVE_IN_SECONDS'),
+        'time_to_live_in_minutes' => env('KBZ_PAY_TIME_TO_LIVE_IN_MINUTES'),
     ],
 
     'wave_money' => [
