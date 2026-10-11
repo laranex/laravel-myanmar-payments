@@ -23,14 +23,14 @@ Requires PHP 8.1+ and Laravel 10 to 13. The service provider and the `MyanmarPay
 
 ## Configure
 
-Set the env keys of the gateways you use. Every gateway uses its production URLs unless you set the URL overrides (`*_BASE_URL`, `KBZ_PAY_PWA_BASE_REDIRECT_URL`, `WAVE_MONEY_AUTHENTICATE_URL`) to the gateway's UAT URLs. Every other setting of those gateways is required and has no default.
+Set the env keys of the gateways you use. Every gateway uses its production URLs unless you set the URL overrides (`*_BASE_URL`, `KBZ_PAY_PWA_BASE_REDIRECT_URL`, `WAVE_MONEY_AUTHENTICATE_URL`) to the gateway's UAT URLs. Every other setting of those gateways is required and has no default unless marked optional below.
 
 - KBZ Pay: `KBZ_PAY_APP_ID`, `KBZ_PAY_APP_KEY`, `KBZ_PAY_MERCHANT_CODE`
 - Wave Money: `WAVE_MONEY_MERCHANT_ID`, `WAVE_MONEY_SECRET_KEY`, `WAVE_MONEY_MERCHANT_NAME`, `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS`
 - AYA Pay: `AYA_PAY_APP_KEY`, `AYA_PAY_APP_SECRET` (`AYA_PGW_*` also read)
 - Yoma MMQR: `YOMA_MMQR_MERCHANT_ID`, `YOMA_MMQR_CLIENT_ID`, `YOMA_MMQR_CLIENT_SECRET`, `YOMA_MMQR_WEBHOOK_HASHKEY`, `YOMA_MMQR_API_VERSION` (e.g. `v1rc`), optional `YOMA_MMQR_WEBHOOK_SECRET`
 - CyberSource: `CYBER_SOURCE_PROFILE_ID`, `CYBER_SOURCE_ACCESS_KEY`, `CYBER_SOURCE_SECRET_KEY`
-- Shared: `MYANMAR_PAYMENTS_HTTP_TIMEOUT` (seconds, required by every gateway except CyberSource), `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` (minutes an auto-submit form link stays valid, required for AYA Pay and CyberSource while the form route is enabled), optional `MYANMAR_PAYMENTS_CACHE_STORE` (store for the Yoma access token, default store when empty)
+- Shared: optional `MYANMAR_PAYMENTS_HTTP_TIMEOUT` (seconds before a gateway call gives up, 30 by default; used by every gateway except CyberSource), `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` (minutes an auto-submit form link stays valid, required for AYA Pay and CyberSource while the form route is enabled), optional `MYANMAR_PAYMENTS_CACHE_STORE` (store for the Yoma access token, default store when empty)
 
 Publish `config/myanmar-payments.php` only to change it, for example the auto-submit form route (`form_route.enabled`, `path`, `middleware`, `ttl_minutes`):
 

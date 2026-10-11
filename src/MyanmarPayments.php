@@ -19,6 +19,7 @@ use Laranex\PhpMyanmarPayments\AyaPay\AyaPayConfig;
 use Laranex\PhpMyanmarPayments\CyberSource\CyberSourceConfig;
 use Laranex\PhpMyanmarPayments\Http\CallbackRequest;
 use Laranex\PhpMyanmarPayments\KbzPay\KbzPayConfig;
+use Laranex\PhpMyanmarPayments\MyanmarPayments as Payments;
 use Laranex\PhpMyanmarPayments\Results\PaymentCallback;
 use Laranex\PhpMyanmarPayments\WaveMoney\WaveMoneyConfig;
 use Laranex\PhpMyanmarPayments\YomaMmqr\YomaMmqrConfig;
@@ -161,7 +162,8 @@ class MyanmarPayments
     }
 
     /**
-     * A gateway's config with the shared `http.timeout` as its `timeout_in_seconds`, unless the gateway sets its own.
+     * A gateway's config with the shared `http.timeout` as its `timeout_in_seconds`, unless the gateway sets its own,
+     * and the SDK's default (30 seconds) when neither is set. Blank values count as unset.
      *
      * @return array<string, mixed>
      */
@@ -169,9 +171,19 @@ class MyanmarPayments
     {
         $config = $this->configFor($gateway);
         $http = $this->config['http'] ?? [];
-        $config['timeout_in_seconds'] ??= is_array($http) ? ($http['timeout'] ?? null) : null;
+        $config['timeout_in_seconds'] = self::filled($config['timeout_in_seconds'] ?? null)
+            ?? self::filled(is_array($http) ? ($http['timeout'] ?? null) : null)
+            ?? Payments::DEFAULT_TIMEOUT_SECONDS;
 
         return $config;
+    }
+
+    /**
+     * The value, or null when it is null or blank text.
+     */
+    private static function filled(mixed $value): mixed
+    {
+        return $value === null || (is_string($value) && trim($value) === '') ? null : $value;
     }
 
     private function httpClient(int $timeoutSeconds): LaravelHttpClient

@@ -60,13 +60,14 @@ return [
     | HTTP
     |--------------------------------------------------------------------------
     |
-    | Seconds before a gateway API call gives up. Required by every gateway
-    | that calls an API (all but CyberSource), as its `timeout_in_seconds`.
+    | Seconds before a gateway API call gives up, 30 by default. Used by
+    | every gateway that calls an API (all but CyberSource) as its
+    | `timeout_in_seconds`, unless the gateway sets its own.
     |
     */
 
     'http' => [
-        'timeout' => env('MYANMAR_PAYMENTS_HTTP_TIMEOUT'),
+        'timeout' => env('MYANMAR_PAYMENTS_HTTP_TIMEOUT', 30),
     ],
 
     /*

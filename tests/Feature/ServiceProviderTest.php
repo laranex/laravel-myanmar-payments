@@ -5,7 +5,6 @@ declare(strict_types=1);
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\ServiceProvider;
 use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
-use Laranex\LaravelMyanmarPayments\Gateways\CyberSource;
 use Laranex\LaravelMyanmarPayments\Http\Controllers\FormPaymentController;
 use Laranex\LaravelMyanmarPayments\Http\FormPaymentUrl;
 use Laranex\LaravelMyanmarPayments\MyanmarPayments as MyanmarPaymentsManager;
@@ -24,29 +23,48 @@ it('ships no sandbox switch and no defaults for gateway settings', function () {
     $config = require __DIR__.'/../../config/myanmar-payments.php';
 
     expect(file_get_contents(__DIR__.'/../../config/myanmar-payments.php'))->not->toContain('andbox')
-        ->and($config['http']['timeout'])->toBeNull()
+        ->and($config['http']['timeout'])->toBe(30)
         ->and($config['wave_money']['merchant_name'])->toBeNull()
         ->and($config['wave_money']['time_to_live_in_seconds'])->toBeNull()
         ->and($config['yoma_mmqr']['api_version'])->toBeNull()
         ->and($config['form_route'])->toBe(['enabled' => true, 'path' => 'myanmar-payments/form', 'middleware' => ['web'], 'ttl_minutes' => null]);
 });
 
-it('requires the HTTP timeout for every gateway that calls an API', function (string $gateway, string $method) {
-    config()->set('myanmar-payments.http.timeout', null);
+it('defaults the HTTP timeout to 30 seconds for every gateway that calls an API', function (mixed $timeout) {
+    config()->set('myanmar-payments.http.timeout', $timeout);
     app()->forgetInstance(MyanmarPaymentsManager::class);
     MyanmarPayments::clearResolvedInstances();
 
-    expect(fn () => MyanmarPayments::{$method}())->toThrow(function (ConfigurationException $exception) use ($gateway) {
-        expect($exception->getMessage())->toBe("The {$gateway} configuration is missing [timeout_in_seconds].")
-            ->and($exception->gateway)->toBe($gateway)
-            ->and($exception->key)->toBe('timeout_in_seconds');
-    })->and(MyanmarPayments::cyberSource())->toBeInstanceOf(CyberSource::class);
-})->with([
-    ['kbz_pay', 'kbzPay'],
-    ['wave_money', 'waveMoney'],
-    ['aya_pay', 'ayaPay'],
-    ['yoma_mmqr', 'yomaMmqr'],
-]);
+    expect([
+        MyanmarPayments::kbzPay()->config->timeoutSeconds,
+        MyanmarPayments::waveMoney()->config->timeoutSeconds,
+        MyanmarPayments::ayaPay()->config->timeoutSeconds,
+        MyanmarPayments::yomaMmqr()->config->timeoutSeconds,
+    ])->toBe([30, 30, 30, 30]);
+})->with([null, '', '   ']);
+
+it('defaults the HTTP timeout to 30 seconds without MYANMAR_PAYMENTS_HTTP_TIMEOUT', function () {
+    $config = require __DIR__.'/../../config/myanmar-payments.php';
+
+    expect(env('MYANMAR_PAYMENTS_HTTP_TIMEOUT'))->toBeNull()
+        ->and($config['http']['timeout'])->toBe(30);
+});
+
+it('reads the HTTP timeout from MYANMAR_PAYMENTS_HTTP_TIMEOUT', function () {
+    putenv('MYANMAR_PAYMENTS_HTTP_TIMEOUT=45');
+
+    try {
+        $config = require __DIR__.'/../../config/myanmar-payments.php';
+    } finally {
+        putenv('MYANMAR_PAYMENTS_HTTP_TIMEOUT');
+    }
+
+    config()->set('myanmar-payments.http.timeout', $config['http']['timeout']);
+    app()->forgetInstance(MyanmarPaymentsManager::class);
+    MyanmarPayments::clearResolvedInstances();
+
+    expect(MyanmarPayments::kbzPay()->config->timeoutSeconds)->toBe(45);
+});
 
 it('rejects an HTTP timeout that is not a whole number greater than 0', function (mixed $timeout) {
     config()->set('myanmar-payments.http.timeout', $timeout);
@@ -57,12 +75,15 @@ it('rejects an HTTP timeout that is not a whole number greater than 0', function
 })->with([0, '-5', 'five', '1.5'])->throws(ConfigurationException::class, 'The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.');
 
 it('lets a gateway set its own timeout over the shared one', function () {
-    config()->set('myanmar-payments.http.timeout', null);
+    config()->set('myanmar-payments.http.timeout', 20);
     config()->set('myanmar-payments.kbz_pay.timeout_in_seconds', '15');
+    config()->set('myanmar-payments.wave_money.timeout_in_seconds', ' ');
     app()->forgetInstance(MyanmarPaymentsManager::class);
     MyanmarPayments::clearResolvedInstances();
 
-    expect(MyanmarPayments::kbzPay()->config->timeoutSeconds)->toBe(15);
+    expect(MyanmarPayments::kbzPay()->config->timeoutSeconds)->toBe(15)
+        ->and(MyanmarPayments::waveMoney()->config->timeoutSeconds)->toBe(20)
+        ->and(MyanmarPayments::ayaPay()->config->timeoutSeconds)->toBe(20);
 });
 
 it('requires the gateway settings that used to have defaults', function (string $gateway, string $method, string $key) {
