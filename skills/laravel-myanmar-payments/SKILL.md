@@ -65,7 +65,7 @@ $payment = MyanmarPayments::kbzPay()->pwa($data);
 return redirect()->away($payment->url);
 ```
 
-- `RedirectPayment` from `kbzPay()->pwa()` and `waveMoney()->initiate()`: redirect to `$payment->url`. For Wave, store `$data->merchantReferenceId` with the order.
+- `RedirectPayment` from `kbzPay()->pwa()` and `waveMoney()->initiate()`: redirect to `$payment->url`. For Wave, store `$data->merchantReferenceId` with the order. Pass `merchantName` or `timeToLiveSeconds` to `WaveMoneyPaymentData` to override `WAVE_MONEY_MERCHANT_NAME` or `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` for that one payment (the settings stay required).
 - `QrPayment` from `kbzPay()->qr()` (encode `qrString`) and `yomaMmqr()->initiate()` (`qrImage` as base64, `qrImageDataUri()`, `expiresAt`, `reference`). Renew an expired Yoma QR with `yomaMmqr()->renewQr($orderId)`.
 - `AppPayment` from `kbzPay()->app()`: return `$payment->toArray()` to the mobile app.
 
