@@ -26,6 +26,7 @@ it('ships no sandbox switch and no defaults for gateway settings', function () {
         ->and($config['http']['timeout'])->toBe(30)
         ->and($config['wave_money']['merchant_name'])->toBeNull()
         ->and($config['wave_money']['time_to_live_in_seconds'])->toBeNull()
+        ->and($config['kbz_pay']['time_to_live_in_seconds'])->toBeNull()
         ->and($config['yoma_mmqr']['api_version'])->toBeNull()
         ->and($config['form_route'])->toBe(['enabled' => true, 'path' => 'myanmar-payments/form', 'middleware' => ['web'], 'ttl_minutes' => null]);
 });
@@ -165,4 +166,14 @@ it('honors the configured ttl for form links', function () {
     $this->get((string) $url)->assertOk();
     $this->travel(6)->minutes();
     $this->get((string) $url)->assertStatus(410);
+});
+
+it('passes KBZ Pay\'s optional time to live to the SDK', function () {
+    expect(MyanmarPayments::kbzPay()->config->timeToLiveSeconds)->toBeNull();
+
+    config()->set('myanmar-payments.kbz_pay.time_to_live_in_seconds', '1800');
+    app()->forgetInstance(MyanmarPaymentsManager::class);
+    MyanmarPayments::clearResolvedInstances();
+
+    expect(MyanmarPayments::kbzPay()->config->timeToLiveSeconds)->toBe(1800);
 });
