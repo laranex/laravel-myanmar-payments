@@ -118,7 +118,7 @@ Route::post('/payments/kbz/callback', function (Request $request) {
 - `MyanmarPayments::acknowledge($callback)` returns the reply each gateway expects so it stops retrying; without a callback it is an empty 200.
 - One route for every gateway: `MyanmarPayments::handleCallback($gateway, $request)` with a name from `gateways()`.
 - Check AYA's browser return with `MyanmarPayments::ayaPay()->verifyRedirect($request)`; it is never proof of payment.
-- Yoma MMQR callbacks sign only `orderNumber` and `status` and carry no amount: confirm with `MyanmarPayments::yomaMmqr()->status($reference)` before fulfilling.
+- Yoma MMQR callbacks sign only `orderNumber` and `status` and carry no amount: match `orderNumber` to your stored order (its QR was generated for the stored amount) and, to confirm, call `MyanmarPayments::yomaMmqr()->status($reference)` with that order's QR reference (`refLabel`). The status result has no amount either, so trust your stored amount.
 - For production, store the verified call, acknowledge immediately and process it once in a queued job; the docs show this flow as app code (the package stores nothing).
 
 ### Check status and handle errors
