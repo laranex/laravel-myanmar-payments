@@ -91,14 +91,16 @@ return [
     | AYA Pay and CyberSource need the customer's browser to POST a signed
     | form. This route renders that form and submits it, so you can simply
     | `redirect($payment->autoSubmitUrl)`. Links expire after `ttl_minutes`,
-    | which is required while the route is enabled.
+    | which is required while the route is enabled. The page needs no
+    | session or cookies, so it runs without middleware by default; add your
+    | own (e.g. throttling or a CSP nonce through `Vite::useCspNonce()`).
     |
     */
 
     'form_route' => [
         'enabled' => true,
         'path' => 'myanmar-payments/form',
-        'middleware' => ['web'],
+        'middleware' => [],
         'ttl_minutes' => env('MYANMAR_PAYMENTS_FORM_TTL_MINUTES'),
     ],
 

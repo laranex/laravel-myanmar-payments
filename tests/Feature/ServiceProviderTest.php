@@ -3,6 +3,7 @@
 declare(strict_types=1);
 
 use Illuminate\Support\Facades\Route;
+use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
 use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
 use Laranex\LaravelMyanmarPayments\Http\Controllers\FormPaymentController;
@@ -14,7 +15,7 @@ use Laranex\PhpMyanmarPayments\Results\FormPayment;
 
 it('merges the package config and lets the host application override it', function () {
     expect(config('myanmar-payments.http.timeout'))->toBe(30)
-        ->and(config('myanmar-payments.form_route'))->toBe(['enabled' => true, 'path' => 'myanmar-payments/form', 'middleware' => ['web'], 'ttl_minutes' => 30])
+        ->and(config('myanmar-payments.form_route'))->toBe(['enabled' => true, 'path' => 'myanmar-payments/form', 'middleware' => [], 'ttl_minutes' => 30])
         ->and(config('myanmar-payments.cache_store'))->toBeNull()
         ->and(config('myanmar-payments.kbz_pay'))->toBe(['app_id' => 'kp123', 'app_key' => 'secret-key', 'merchant_code' => '100001', 'time_to_live_in_minutes' => 30]);
 });
@@ -28,7 +29,7 @@ it('ships no sandbox switch and no defaults for gateway settings', function () {
         ->and($config['wave_money']['time_to_live_in_seconds'])->toBeNull()
         ->and($config['kbz_pay']['time_to_live_in_minutes'])->toBeNull()
         ->and($config['yoma_mmqr']['api_version'])->toBeNull()
-        ->and($config['form_route'])->toBe(['enabled' => true, 'path' => 'myanmar-payments/form', 'middleware' => ['web'], 'ttl_minutes' => null]);
+        ->and($config['form_route'])->toBe(['enabled' => true, 'path' => 'myanmar-payments/form', 'middleware' => [], 'ttl_minutes' => null]);
 });
 
 it('defaults the HTTP timeout to 30 seconds for every gateway that calls an API', function (mixed $timeout) {
@@ -119,7 +120,7 @@ it('registers the form route with the configured path, name and middleware', fun
     expect($route)->not->toBeNull()
         ->and($route->uri())->toBe('myanmar-payments/form')
         ->and($route->methods())->toContain('GET')
-        ->and($route->middleware())->toBe(['web'])
+        ->and($route->middleware())->toBe([])
         ->and($route->getActionName())->toBe(FormPaymentController::class);
 });
 
@@ -183,4 +184,24 @@ it('passes the optional time to live settings to the SDK', function () {
 
     expect(MyanmarPayments::kbzPay()->config->timeToLiveMinutes)->toBe(45)
         ->and(MyanmarPayments::waveMoney()->config->timeToLiveSeconds)->toBe(600);
+});
+
+it('serves the form page without a session, sending only the origin as the referrer', function () {
+    $url = app(FormPaymentUrl::class)->attach(new FormPayment('ORDER_9', 'https://gateway.test/pay', ['amount' => '1000']))->autoSubmitUrl;
+
+    $response = $this->get((string) $url)->assertOk()
+        ->assertHeader('Referrer-Policy', 'strict-origin')
+        ->assertHeader('Cache-Control', 'no-store, private');
+
+    expect($response->headers->getCookies())->toBe([])
+        ->and($response->getContent())->toContain('<script>document.getElementById("payment-form").submit();</script>');
+});
+
+it('adds the Vite CSP nonce to the form page script', function () {
+    Vite::useCspNonce('n0nce"<');
+
+    $url = app(FormPaymentUrl::class)->attach(new FormPayment('ORDER_9', 'https://gateway.test/pay', ['amount' => '1000']))->autoSubmitUrl;
+
+    expect($this->get((string) $url)->assertOk()->getContent())
+        ->toContain('<script nonce="n0nce&quot;&lt;">document.getElementById("payment-form").submit();</script>');
 });

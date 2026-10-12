@@ -72,7 +72,7 @@ return redirect()->away($payment->url);
 
 ### Form payments (AYA Pay, CyberSource)
 
-`ayaPay()->initiate()` and `cyberSource()->initiate()` return a `FormPayment` the customer's browser must POST. Redirect to `$payment->autoSubmitUrl`: a link to the package's `GET myanmar-payments/form` route, encrypted with `APP_KEY` and valid for `form_route.ttl_minutes`; a tampered or expired link answers 410. Or return `$payment->toHtml()` yourself.
+`ayaPay()->initiate()` and `cyberSource()->initiate()` return a `FormPayment` the customer's browser must POST. Redirect to `$payment->autoSubmitUrl`: a link to the package's `GET myanmar-payments/form` route, encrypted with `APP_KEY` and valid for `form_route.ttl_minutes`; a tampered or expired link answers 410. The route runs without middleware by default (no session needed), sends `Referrer-Policy: strict-origin` and adds the `Vite::useCspNonce()` nonce to its script when one is set. Or return `$payment->toHtml()` yourself.
 
 AYA Pay needs a channel: list them with `MyanmarPayments::ayaPay()->services()` (each `AyaPayService` has `key` and `supports(AyaPayMethod $method)`), then:
 
@@ -118,6 +118,7 @@ Route::post('/payments/kbz/callback', function (Request $request) {
 - `MyanmarPayments::acknowledge($callback)` returns the reply each gateway expects so it stops retrying; without a callback it is an empty 200.
 - One route for every gateway: `MyanmarPayments::handleCallback($gateway, $request)` with a name from `gateways()`.
 - Check AYA's browser return with `MyanmarPayments::ayaPay()->verifyRedirect($request)`; it is never proof of payment.
+- Yoma MMQR callbacks sign only `orderNumber` and `status` and carry no amount: confirm with `MyanmarPayments::yomaMmqr()->status($reference)` before fulfilling.
 - For production, store the verified call, acknowledge immediately and process it once in a queued job; the docs show this flow as app code (the package stores nothing).
 
 ### Check status and handle errors
