@@ -57,7 +57,7 @@ it('verifies a Wave Money callback from a Laravel request', function () {
 });
 
 it('verifies an AYA Pay callback and its browser redirect from Laravel requests', function () {
-    $payload = ['merchOrderId' => 'ORDER123', 'tranId' => 'T1', 'amount' => '1000', 'currencyCode' => 'MMK', 'statusCode' => '00', 'approvalCode' => 'A1', 'tranRef' => 'R1', 'description' => 'Order', 'dateTime' => '2024-01-01 00:00:00'];
+    $payload = ['merchOrderId' => 'ORDER123', 'tranId' => 'T1', 'amount' => '1000', 'currencyCode' => '104', 'statusCode' => '00', 'approvalCode' => 'A1', 'tranRef' => 'R1', 'description' => 'Order', 'dateTime' => '2024-01-01 00:00:00'];
     $input = signedAyaInput($payload);
 
     $callback = MyanmarPayments::ayaPay()->handleCallback(jsonCallback('/aya/callback', $input));

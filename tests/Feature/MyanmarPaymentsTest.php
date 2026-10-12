@@ -125,7 +125,7 @@ it('sends exact decimal amounts where the gateway allows them', function () {
 });
 
 it('sends every gateway API call through the Laravel HTTP client', function () {
-    $enquiry = ['merchOrderId' => 'ORDER123', 'tranId' => 'T1', 'amount' => '1000', 'statusCode' => '00'];
+    $enquiry = ['merchOrderId' => 'ORDER123', 'tranId' => 'T1', 'amount' => '1000', 'currenyCode' => '104', 'statusCode' => '00'];
 
     Http::preventStrayRequests();
     Http::fake([
