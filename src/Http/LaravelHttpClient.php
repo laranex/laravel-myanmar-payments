@@ -12,6 +12,7 @@ use Psr\Http\Message\ResponseInterface;
 
 /**
  * PSR-18 client backed by Laravel's HTTP client, so `Http::fake()` and request events work for gateway calls.
+ * Redirects are returned as they are, never followed, like the other SDKs.
  */
 class LaravelHttpClient implements ClientInterface
 {
@@ -29,6 +30,7 @@ class LaravelHttpClient implements ClientInterface
                 ->withHeaders($headers)
                 ->withBody((string) $request->getBody(), $request->getHeaderLine('Content-Type') ?: 'application/octet-stream')
                 ->timeout($this->timeout)
+                ->withoutRedirecting()
                 ->send($request->getMethod(), (string) $request->getUri())
                 ->toPsrResponse();
         } catch (ConnectionException $e) {

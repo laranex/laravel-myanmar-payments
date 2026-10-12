@@ -2,7 +2,9 @@
 
 declare(strict_types=1);
 
+use GuzzleHttp\Psr7\Request as PsrRequest;
 use Illuminate\Http\Client\ConnectionException;
+use Illuminate\Http\Client\Factory;
 use Illuminate\Http\Client\Request as HttpRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
@@ -12,6 +14,7 @@ use Laranex\LaravelMyanmarPayments\Gateways\CyberSource;
 use Laranex\LaravelMyanmarPayments\Gateways\KbzPay;
 use Laranex\LaravelMyanmarPayments\Gateways\WaveMoney;
 use Laranex\LaravelMyanmarPayments\Gateways\YomaMmqr;
+use Laranex\LaravelMyanmarPayments\Http\LaravelHttpClient;
 use Laranex\LaravelMyanmarPayments\MyanmarPayments as MyanmarPaymentsManager;
 use Laranex\PhpMyanmarPayments\Amount;
 use Laranex\PhpMyanmarPayments\AyaPay\AyaPayMethod;
@@ -166,4 +169,18 @@ it('lets apps mock the facade to test their own callback handling', function () 
     MyanmarPayments::shouldReceive('kbzPay->handleCallback')->andReturn($callback);
 
     expect(MyanmarPayments::kbzPay()->handleCallback(Request::create('/kbz/callback', 'POST'))->isSuccessful())->toBeTrue();
+});
+
+it('returns a gateway redirect as it is instead of following it', function () {
+    Http::fake([
+        'https://gateway.test/start' => Http::response('', 302, ['Location' => 'https://elsewhere.test/']),
+        'https://elsewhere.test/*' => Http::response('followed'),
+    ]);
+
+    $client = new LaravelHttpClient(app(Factory::class), 30);
+    $response = $client->sendRequest(new PsrRequest('POST', 'https://gateway.test/start', ['Content-Type' => 'application/json'], '{}'));
+
+    expect($response->getStatusCode())->toBe(302)
+        ->and($response->getHeaderLine('Location'))->toBe('https://elsewhere.test/');
+    Http::assertSentCount(1);
 });
