@@ -8,12 +8,12 @@ use Illuminate\Http\Request;
 use Laranex\LaravelMyanmarPayments\Http\CallbackRequestFactory;
 use Laranex\PhpMyanmarPayments\Http\CallbackRequest;
 use Laranex\PhpMyanmarPayments\Results\PaymentCallback;
-use Laranex\PhpMyanmarPayments\WaveMoney\WaveMoney as BaseWaveMoney;
+use Laranex\PhpMyanmarPayments\WavePay\WavePay as BaseWavePay;
 
 /**
- * {@see BaseWaveMoney} that also accepts Laravel requests.
+ * {@see BaseWavePay} that also accepts Laravel requests.
  */
-class WaveMoney extends BaseWaveMoney
+class WavePay extends BaseWavePay
 {
     public function handleCallback(CallbackRequest|Request $request): PaymentCallback
     {

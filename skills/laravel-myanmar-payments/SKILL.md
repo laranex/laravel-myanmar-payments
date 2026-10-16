@@ -1,7 +1,7 @@
 ---
 name: laravel-myanmar-payments
 description: >
-  Integrate Myanmar payment gateways (KBZ Pay, Wave Money, AYA Pay, Yoma MMQR, CyberSource) in a Laravel app with laranex/laravel-myanmar-payments.
+  Integrate Myanmar payment gateways (KBZ Pay, Wave Pay, AYA Pay, Yoma MMQR, CyberSource) in a Laravel app with laranex/laravel-myanmar-payments.
 license: MIT
 metadata:
   author: Nay Thu Khant
@@ -11,7 +11,7 @@ metadata:
 
 ## When to use
 
-Use this skill when a Laravel application starts a payment, handles a gateway callback or checks a payment status with KBZ Pay, Wave Money, AYA Payment Gateway, Yoma MMQR or CyberSource. Start payments and verify callbacks with the package's typed API; never build gateway signatures by hand. The package wraps the PHP SDK `laranex/php-myanmar-payments`: payment data, results, statuses and exceptions are the SDK's classes (`Laranex\PhpMyanmarPayments\...`).
+Use this skill when a Laravel application starts a payment, handles a gateway callback or checks a payment status with KBZ Pay, Wave Pay, AYA Payment Gateway, Yoma MMQR or CyberSource. Start payments and verify callbacks with the package's typed API; never build gateway signatures by hand. The package wraps the PHP SDK `laranex/php-myanmar-payments`: payment data, results, statuses and exceptions are the SDK's classes (`Laranex\PhpMyanmarPayments\...`).
 
 ## Install
 
@@ -26,7 +26,7 @@ Requires PHP 8.1+ and Laravel 10 to 13. The service provider and the `MyanmarPay
 Set the env keys of the gateways you use. Every setting of those gateways is required and has no default, URLs included: set production's URLs, or the gateway's UAT URLs to test. Only the shared HTTP timeout is optional.
 
 - KBZ Pay: `KBZ_PAY_APP_ID`, `KBZ_PAY_APP_KEY`, `KBZ_PAY_MERCHANT_CODE`, `KBZ_PAY_BASE_URL`, `KBZ_PAY_PWA_BASE_REDIRECT_URL`, `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` (1 to 120; a payment's `timeToLiveMinutes` overrides it)
-- Wave Money: `WAVE_MONEY_MERCHANT_ID`, `WAVE_MONEY_SECRET_KEY`, `WAVE_MONEY_MERCHANT_NAME`, `WAVE_MONEY_BASE_URL` (payments are requested at its `/payment`), `WAVE_MONEY_BASE_REDIRECT_URL` (the customer is sent to its `/authenticate`), `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` (greater than 0; a payment's `timeToLiveSeconds` overrides it)
+- Wave Pay: `WAVE_PAY_MERCHANT_ID`, `WAVE_PAY_SECRET_KEY`, `WAVE_PAY_MERCHANT_NAME`, `WAVE_PAY_BASE_URL` (payments are requested at its `/payment`), `WAVE_PAY_BASE_REDIRECT_URL` (the customer is sent to its `/authenticate`), `WAVE_PAY_TIME_TO_LIVE_IN_SECONDS` (greater than 0; a payment's `timeToLiveSeconds` overrides it)
 - AYA Pay: `AYA_PAY_APP_KEY`, `AYA_PAY_APP_SECRET`, `AYA_PAY_BASE_URL`
 - Yoma MMQR: `YOMA_MMQR_MERCHANT_ID`, `YOMA_MMQR_CLIENT_ID`, `YOMA_MMQR_CLIENT_SECRET`, `YOMA_MMQR_WEBHOOK_HASHKEY`, `YOMA_MMQR_API_VERSION` (e.g. `v1rc`), `YOMA_MMQR_WEBHOOK_SECRET` (every callback must carry it in `X-Webhook-Secret`), `YOMA_MMQR_BASE_URL`
 - CyberSource: `CYBER_SOURCE_PROFILE_ID`, `CYBER_SOURCE_ACCESS_KEY`, `CYBER_SOURCE_SECRET_KEY`, `CYBER_SOURCE_BASE_URL`
@@ -42,7 +42,7 @@ An unconfigured gateway throws `ConfigurationException` (`gateway`, `key`) namin
 
 ## Use
 
-Every gateway is reached through `Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments`: `kbzPay()`, `waveMoney()`, `ayaPay()`, `yomaMmqr()` and `cyberSource()`, or `gateway('kbz-pay')` by name (`gateways()` lists `kbz-pay`, `wave-money`, `aya-pay`, `yoma-mmqr`, `cyber-source`). Each gateway is built once and reused.
+Every gateway is reached through `Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments`: `kbzPay()`, `wavePay()`, `ayaPay()`, `yomaMmqr()` and `cyberSource()`, or `gateway('kbz-pay')` by name (`gateways()` lists `kbz-pay`, `wave-pay`, `aya-pay`, `yoma-mmqr`, `cyber-source`). Each gateway is built once and reused.
 
 ### Amounts
 
@@ -65,7 +65,7 @@ $payment = MyanmarPayments::kbzPay()->pwa($data);
 return redirect()->away($payment->url);
 ```
 
-- `RedirectPayment` from `kbzPay()->pwa()` and `waveMoney()->initiate()`: redirect to `$payment->url`. For Wave, store `$data->merchantReferenceId` with the order. Pass `merchantName` or `timeToLiveSeconds` to `WaveMoneyPaymentData` to override `WAVE_MONEY_MERCHANT_NAME` or `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` for that one payment (the merchant name setting stays required).
+- `RedirectPayment` from `kbzPay()->pwa()` and `wavePay()->initiate()`: redirect to `$payment->url`. For Wave, store `$data->merchantReferenceId` with the order. Pass `merchantName` or `timeToLiveSeconds` to `WavePayPaymentData` to override `WAVE_PAY_MERCHANT_NAME` or `WAVE_PAY_TIME_TO_LIVE_IN_SECONDS` for that one payment (the merchant name setting stays required).
 - `QrPayment` from `kbzPay()->qr()` (encode `qrString`) and `yomaMmqr()->initiate()` (`qrImage` as base64, `qrImageDataUri()`, `expiresAt`, `reference`). Renew an expired Yoma QR with `yomaMmqr()->renewQr($orderId)`.
 - `AppPayment` from `kbzPay()->app()`: return `$payment->toArray()` to the mobile app.
 
@@ -122,7 +122,7 @@ Route::post('/payments/kbz/callback', function (Request $request) {
 
 ### Check status and handle errors
 
-- `kbzPay()->status($orderId)`, `ayaPay()->status($orderId)` and `yomaMmqr()->status($reference)` return a `PaymentStatusResult` with `status` and `isSuccessful()`. Wave Money and CyberSource have no status API.
+- `kbzPay()->status($orderId)`, `ayaPay()->status($orderId)` and `yomaMmqr()->status($reference)` return a `PaymentStatusResult` with `status` and `isSuccessful()`. Wave Pay and CyberSource have no status API.
 - Statuses are the `PaymentStatus` enum: `Successful`, `Pending`, `Failed`, `Canceled`, `Expired`, `Unknown`.
 - Gateway errors throw `ApiException` (`gatewayCode`, `gatewayMessage`, `httpStatus`, `raw`); catch `PaymentException` for every package error.
 

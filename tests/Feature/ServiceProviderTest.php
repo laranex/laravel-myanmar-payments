@@ -25,11 +25,11 @@ it('ships no sandbox switch and no defaults for gateway settings', function () {
 
     expect(file_get_contents(__DIR__.'/../../config/myanmar-payments.php'))->not->toContain('andbox')
         ->and($config['http']['timeout'])->toBe(30)
-        ->and($config['wave_money']['merchant_name'])->toBeNull()
-        ->and($config['wave_money']['time_to_live_in_seconds'])->toBeNull()
+        ->and($config['wave_pay']['merchant_name'])->toBeNull()
+        ->and($config['wave_pay']['time_to_live_in_seconds'])->toBeNull()
         ->and($config['kbz_pay']['time_to_live_in_minutes'])->toBeNull()
         ->and($config['kbz_pay']['api_url'])->toBeNull()
-        ->and($config['wave_money']['base_redirect_url'])->toBeNull()
+        ->and($config['wave_pay']['base_redirect_url'])->toBeNull()
         ->and($config['yoma_mmqr']['webhook_secret'])->toBeNull()
         ->and($config['yoma_mmqr']['api_version'])->toBeNull()
         ->and($config['form_route'])->toBe(['enabled' => true, 'path' => 'myanmar-payments/form', 'middleware' => [], 'ttl_minutes' => null]);
@@ -42,7 +42,7 @@ it('defaults the HTTP timeout to 30 seconds for every gateway that calls an API'
 
     expect([
         MyanmarPayments::kbzPay()->config->timeoutSeconds,
-        MyanmarPayments::waveMoney()->config->timeoutSeconds,
+        MyanmarPayments::wavePay()->config->timeoutSeconds,
         MyanmarPayments::ayaPay()->config->timeoutSeconds,
         MyanmarPayments::yomaMmqr()->config->timeoutSeconds,
     ])->toBe([30, 30, 30, 30]);
@@ -82,12 +82,12 @@ it('rejects an HTTP timeout that is not a whole number greater than 0', function
 it('lets a gateway set its own timeout over the shared one', function () {
     config()->set('myanmar-payments.http.timeout', 20);
     config()->set('myanmar-payments.kbz_pay.timeout_in_seconds', '15');
-    config()->set('myanmar-payments.wave_money.timeout_in_seconds', ' ');
+    config()->set('myanmar-payments.wave_pay.timeout_in_seconds', ' ');
     app()->forgetInstance(MyanmarPaymentsManager::class);
     MyanmarPayments::clearResolvedInstances();
 
     expect(MyanmarPayments::kbzPay()->config->timeoutSeconds)->toBe(15)
-        ->and(MyanmarPayments::waveMoney()->config->timeoutSeconds)->toBe(20)
+        ->and(MyanmarPayments::wavePay()->config->timeoutSeconds)->toBe(20)
         ->and(MyanmarPayments::ayaPay()->config->timeoutSeconds)->toBe(20);
 });
 
@@ -98,7 +98,7 @@ it('requires the gateway settings that used to have defaults', function (string 
 
     MyanmarPayments::{$method}();
 })->with([
-    ['wave_money', 'waveMoney', 'merchant_name'],
+    ['wave_pay', 'wavePay', 'merchant_name'],
     ['yoma_mmqr', 'yomaMmqr', 'api_version'],
 ])->throws(ConfigurationException::class, 'configuration is missing');
 
@@ -173,20 +173,20 @@ it('honors the configured ttl for form links', function () {
 
 it('passes the time to live settings to the SDK, which requires them', function () {
     config()->set('myanmar-payments.kbz_pay.time_to_live_in_minutes', null);
-    config()->set('myanmar-payments.wave_money.time_to_live_in_seconds', null);
+    config()->set('myanmar-payments.wave_pay.time_to_live_in_seconds', null);
     app()->forgetInstance(MyanmarPaymentsManager::class);
     MyanmarPayments::clearResolvedInstances();
 
     expect(fn () => MyanmarPayments::kbzPay())->toThrow(ConfigurationException::class, 'The kbz_pay configuration is missing [time_to_live_in_minutes].')
-        ->and(fn () => MyanmarPayments::waveMoney())->toThrow(ConfigurationException::class, 'The wave_money configuration is missing [time_to_live_in_seconds].');
+        ->and(fn () => MyanmarPayments::wavePay())->toThrow(ConfigurationException::class, 'The wave_pay configuration is missing [time_to_live_in_seconds].');
 
     config()->set('myanmar-payments.kbz_pay.time_to_live_in_minutes', '45');
-    config()->set('myanmar-payments.wave_money.time_to_live_in_seconds', '600');
+    config()->set('myanmar-payments.wave_pay.time_to_live_in_seconds', '600');
     app()->forgetInstance(MyanmarPaymentsManager::class);
     MyanmarPayments::clearResolvedInstances();
 
     expect(MyanmarPayments::kbzPay()->config->timeToLiveMinutes)->toBe(45)
-        ->and(MyanmarPayments::waveMoney()->config->timeToLiveSeconds)->toBe(600);
+        ->and(MyanmarPayments::wavePay()->config->timeToLiveSeconds)->toBe(600);
 });
 
 it('serves the form page without a session, sending only the origin as the referrer', function () {

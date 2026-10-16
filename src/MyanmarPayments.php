@@ -10,7 +10,7 @@ use InvalidArgumentException;
 use Laranex\LaravelMyanmarPayments\Gateways\AyaPay;
 use Laranex\LaravelMyanmarPayments\Gateways\CyberSource;
 use Laranex\LaravelMyanmarPayments\Gateways\KbzPay;
-use Laranex\LaravelMyanmarPayments\Gateways\WaveMoney;
+use Laranex\LaravelMyanmarPayments\Gateways\WavePay;
 use Laranex\LaravelMyanmarPayments\Gateways\YomaMmqr;
 use Laranex\LaravelMyanmarPayments\Http\CallbackResponse;
 use Laranex\LaravelMyanmarPayments\Http\FormPaymentUrl;
@@ -21,7 +21,7 @@ use Laranex\PhpMyanmarPayments\Http\CallbackRequest;
 use Laranex\PhpMyanmarPayments\KbzPay\KbzPayConfig;
 use Laranex\PhpMyanmarPayments\MyanmarPayments as Payments;
 use Laranex\PhpMyanmarPayments\Results\PaymentCallback;
-use Laranex\PhpMyanmarPayments\WaveMoney\WaveMoneyConfig;
+use Laranex\PhpMyanmarPayments\WavePay\WavePayConfig;
 use Laranex\PhpMyanmarPayments\YomaMmqr\YomaMmqrConfig;
 use Psr\SimpleCache\CacheInterface;
 
@@ -32,7 +32,7 @@ class MyanmarPayments
 {
     private ?KbzPay $kbzPay = null;
 
-    private ?WaveMoney $waveMoney = null;
+    private ?WavePay $wavePay = null;
 
     private ?AyaPay $ayaPay = null;
 
@@ -65,16 +65,16 @@ class MyanmarPayments
     }
 
     /**
-     * Wave Money: `initiate()` and `handleCallback()`.
+     * Wave Pay: `initiate()` and `handleCallback()`.
      */
-    public function waveMoney(): WaveMoney
+    public function wavePay(): WavePay
     {
-        if ($this->waveMoney === null) {
-            $config = WaveMoneyConfig::fromArray($this->apiConfigFor('wave_money'));
-            $this->waveMoney = new WaveMoney($config, $this->httpClient($config->timeoutSeconds));
+        if ($this->wavePay === null) {
+            $config = WavePayConfig::fromArray($this->apiConfigFor('wave_pay'));
+            $this->wavePay = new WavePay($config, $this->httpClient($config->timeoutSeconds));
         }
 
-        return $this->waveMoney;
+        return $this->wavePay;
     }
 
     /**
@@ -118,7 +118,7 @@ class MyanmarPayments
      */
     public function gateways(): array
     {
-        return ['kbz-pay', 'wave-money', 'aya-pay', 'yoma-mmqr', 'cyber-source'];
+        return ['kbz-pay', 'wave-pay', 'aya-pay', 'yoma-mmqr', 'cyber-source'];
     }
 
     /**
@@ -126,11 +126,11 @@ class MyanmarPayments
      *
      * @throws InvalidArgumentException for an unknown name
      */
-    public function gateway(string $name): KbzPay|WaveMoney|AyaPay|YomaMmqr|CyberSource
+    public function gateway(string $name): KbzPay|WavePay|AyaPay|YomaMmqr|CyberSource
     {
         return match ($name) {
             'kbz-pay' => $this->kbzPay(),
-            'wave-money' => $this->waveMoney(),
+            'wave-pay' => $this->wavePay(),
             'aya-pay' => $this->ayaPay(),
             'yoma-mmqr' => $this->yomaMmqr(),
             'cyber-source' => $this->cyberSource(),

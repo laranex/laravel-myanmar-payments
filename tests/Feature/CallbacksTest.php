@@ -14,8 +14,8 @@ use Laranex\PhpMyanmarPayments\CyberSource\CyberSourceTransactionType;
 use Laranex\PhpMyanmarPayments\Enums\PaymentStatus;
 use Laranex\PhpMyanmarPayments\Exceptions\SignatureVerificationException;
 use Laranex\PhpMyanmarPayments\Http\CallbackRequest;
-use Laranex\PhpMyanmarPayments\WaveMoney\WaveMoneyItem;
-use Laranex\PhpMyanmarPayments\WaveMoney\WaveMoneyPaymentData;
+use Laranex\PhpMyanmarPayments\WavePay\WavePayItem;
+use Laranex\PhpMyanmarPayments\WavePay\WavePayPaymentData;
 
 /**
  * @param  array<string, mixed>  $payload
@@ -43,12 +43,12 @@ function signedAyaInput(array $payload): array
     return ['payload' => $encoded, 'checkSum' => hash_hmac('sha256', implode(':', $values), 'aya-secret')];
 }
 
-it('verifies a Wave Money callback from a Laravel request', function () {
+it('verifies a Wave Pay callback from a Laravel request', function () {
     $payload = ['status' => 'PAYMENT_CONFIRMED', 'timeToLiveSeconds' => 300, 'merchantId' => 'wave', 'orderId' => 'ORDER_1', 'amount' => '1000', 'backendResultUrl' => 'https://shop.test/wave/callback', 'merchantReferenceId' => 'ref-1', 'initiatorMsisdn' => '9597', 'transactionId' => '360', 'paymentRequestId' => '12', 'requestTime' => '2024-01-01 00:00:00'];
     $fields = ['status', 'timeToLiveSeconds', 'merchantId', 'orderId', 'amount', 'backendResultUrl', 'merchantReferenceId', 'initiatorMsisdn', 'transactionId', 'paymentRequestId', 'requestTime'];
     $payload['hashValue'] = hash_hmac('sha256', implode('', array_map(fn (string $field): string => (string) $payload[$field], $fields)), 'wave-secret');
 
-    $callback = MyanmarPayments::waveMoney()->handleCallback(jsonCallback('/wave/callback', $payload));
+    $callback = MyanmarPayments::wavePay()->handleCallback(jsonCallback('/wave/callback', $payload));
 
     expect($callback->isSuccessful())->toBeTrue()
         ->and($callback->orderId)->toBe('ORDER_1')
@@ -101,7 +101,7 @@ it('verifies a CyberSource result post from a Laravel request and attaches the f
 });
 
 it('rejects a tampered callback', function () {
-    MyanmarPayments::waveMoney()->handleCallback(jsonCallback('/wave/callback', ['status' => 'PAYMENT_CONFIRMED', 'orderId' => 'ORDER_1', 'hashValue' => 'nope']));
+    MyanmarPayments::wavePay()->handleCallback(jsonCallback('/wave/callback', ['status' => 'PAYMENT_CONFIRMED', 'orderId' => 'ORDER_1', 'hashValue' => 'nope']));
 })->throws(SignatureVerificationException::class);
 
 it('passes framework-agnostic callback requests straight through', function () {
@@ -130,28 +130,31 @@ it('acknowledges callbacks with the response each gateway expects, directly from
         ->and(MyanmarPayments::acknowledge(MyanmarPayments::yomaMmqr()->handleCallback(jsonCallback('/yoma/callback', $payload, ['X-Webhook-Secret' => 'hook-secret']))))->toBeInstanceOf(CallbackResponse::class);
 });
 
-it('forwards form encoded gateway requests with their headers through the HTTP client', function () {
+it('forwards JSON gateway requests with their headers through the HTTP client', function () {
     Http::fake(['*/payment' => Http::response(['message' => 'success', 'transaction_id' => 'tx-1'])]);
 
-    $payment = MyanmarPayments::waveMoney()->initiate(new WaveMoneyPaymentData(
+    $payment = MyanmarPayments::wavePay()->initiate(new WavePayPaymentData(
         orderId: 'ORDER_1',
         callbackUrl: 'https://shop.test/wave/callback',
         returnUrl: 'https://shop.test/done',
         description: 'Order 1',
-        items: [new WaveMoneyItem('Shoes', 1000)],
+        items: [new WavePayItem('Shoes', 1000)],
         merchantReferenceId: 'ref-1',
     ));
 
     expect($payment->gatewayReference)->toBe('tx-1');
-    Http::assertSent(fn (HttpRequest $request): bool => $request->hasHeader('Content-Type', 'application/x-www-form-urlencoded')
+    Http::assertSent(fn (HttpRequest $request): bool => $request->hasHeader('Content-Type', 'application/json')
+        && $request->hasHeader('Accept', 'application/json')
         && $request['merchant_id'] === 'wave'
-        && $request['order_id'] === 'ORDER_1');
+        && $request['order_id'] === 'ORDER_1'
+        && $request['amount'] === 1000
+        && $request['currency'] === 'MMK');
 });
 
 it('resolves every gateway by its callback route name', function () {
-    expect(MyanmarPayments::gateways())->toBe(['kbz-pay', 'wave-money', 'aya-pay', 'yoma-mmqr', 'cyber-source'])
+    expect(MyanmarPayments::gateways())->toBe(['kbz-pay', 'wave-pay', 'aya-pay', 'yoma-mmqr', 'cyber-source'])
         ->and(MyanmarPayments::gateway('kbz-pay'))->toBe(MyanmarPayments::kbzPay())
-        ->and(MyanmarPayments::gateway('wave-money'))->toBe(MyanmarPayments::waveMoney())
+        ->and(MyanmarPayments::gateway('wave-pay'))->toBe(MyanmarPayments::wavePay())
         ->and(MyanmarPayments::gateway('aya-pay'))->toBe(MyanmarPayments::ayaPay())
         ->and(MyanmarPayments::gateway('yoma-mmqr'))->toBe(MyanmarPayments::yomaMmqr())
         ->and(MyanmarPayments::gateway('cyber-source'))->toBe(MyanmarPayments::cyberSource());
@@ -159,7 +162,7 @@ it('resolves every gateway by its callback route name', function () {
 
 it('rejects an unknown gateway name', function () {
     MyanmarPayments::gateway('paypal');
-})->throws(InvalidArgumentException::class, 'Unknown payment gateway [paypal]; use one of kbz-pay, wave-money, aya-pay, yoma-mmqr, cyber-source.');
+})->throws(InvalidArgumentException::class, 'Unknown payment gateway [paypal]; use one of kbz-pay, wave-pay, aya-pay, yoma-mmqr, cyber-source.');
 
 it('verifies a callback by gateway name from one route for every gateway', function () {
     $payload = ['orderNumber' => 'ORDER_7', 'status' => 'SUCCESS', 'hashValue' => hash_hmac('sha256', 'orderNumber=ORDER_7&status=SUCCESS', 'ORDER_7hash-key')];
@@ -173,7 +176,7 @@ it('verifies a callback by gateway name from one route for every gateway', funct
     expect($callback->orderId)->toBe('ORDER_7')
         ->and($callback->isSuccessful())->toBeTrue();
 
-    $this->postJson('/webhooks/payments/wave-money', $payload)->assertStatus(500);
+    $this->postJson('/webhooks/payments/wave-pay', $payload)->assertStatus(500);
 });
 
 it('acknowledges with an empty 200 without a callback', function () {

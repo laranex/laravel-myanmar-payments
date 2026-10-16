@@ -12,7 +12,7 @@ use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
 use Laranex\LaravelMyanmarPayments\Gateways\AyaPay;
 use Laranex\LaravelMyanmarPayments\Gateways\CyberSource;
 use Laranex\LaravelMyanmarPayments\Gateways\KbzPay;
-use Laranex\LaravelMyanmarPayments\Gateways\WaveMoney;
+use Laranex\LaravelMyanmarPayments\Gateways\WavePay;
 use Laranex\LaravelMyanmarPayments\Gateways\YomaMmqr;
 use Laranex\LaravelMyanmarPayments\Http\LaravelHttpClient;
 use Laranex\LaravelMyanmarPayments\MyanmarPayments as MyanmarPaymentsManager;
@@ -29,7 +29,7 @@ use Laranex\PhpMyanmarPayments\YomaMmqr\YomaMmqrPaymentData;
 it('resolves every gateway through the facade', function () {
     expect(app(MyanmarPaymentsManager::class))->toBe(app(MyanmarPaymentsManager::class))
         ->and(MyanmarPayments::kbzPay())->toBeInstanceOf(KbzPay::class)
-        ->and(MyanmarPayments::waveMoney())->toBeInstanceOf(WaveMoney::class)
+        ->and(MyanmarPayments::wavePay())->toBeInstanceOf(WavePay::class)
         ->and(MyanmarPayments::ayaPay())->toBeInstanceOf(AyaPay::class)
         ->and(MyanmarPayments::yomaMmqr())->toBeInstanceOf(YomaMmqr::class)
         ->and(MyanmarPayments::cyberSource())->toBeInstanceOf(CyberSource::class);
@@ -105,13 +105,13 @@ it('keeps the Yoma token in the Laravel cache between requests', function () {
 });
 
 it('names the missing setting when a gateway is not configured', function () {
-    config()->set('myanmar-payments.wave_money', []);
+    config()->set('myanmar-payments.wave_pay', []);
     app()->forgetInstance(MyanmarPaymentsManager::class);
     MyanmarPayments::clearResolvedInstances();
 
-    expect(fn () => MyanmarPayments::waveMoney())->toThrow(function (ConfigurationException $exception) {
+    expect(fn () => MyanmarPayments::wavePay())->toThrow(function (ConfigurationException $exception) {
         expect($exception->getMessage())->toContain('[merchant_id]')
-            ->and($exception->gateway)->toBe('wave_money')
+            ->and($exception->gateway)->toBe('wave_pay')
             ->and($exception->key)->toBe('merchant_id');
     });
 });
@@ -158,6 +158,9 @@ it('sends every gateway API call through the Laravel HTTP client', function () {
         ->and(MyanmarPayments::yomaMmqr()->renewQr('ORDER_7')->reference)->toBe('REF1')
         ->and(MyanmarPayments::yomaMmqr()->status('REF1')->isSuccessful())->toBeTrue();
 
+    Http::assertSent(fn (HttpRequest $request): bool => str_ends_with($request->url(), '/token')
+        && $request->hasHeader('Content-Type', 'application/x-www-form-urlencoded')
+        && $request['grant_type'] === 'client_credentials');
     Http::assertSent(fn (HttpRequest $request): bool => str_ends_with($request->url(), '/payment/checkout')
         && $request->hasHeader('Authorization', 'Bearer token-1')
         && $request['orderNumber'] === 'ORDER_7');

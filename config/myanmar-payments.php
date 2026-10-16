@@ -11,8 +11,8 @@ return [
     |
     | Only the gateways you call need settings, and every setting of those
     | gateways is required, URLs included: set production's URLs, or the
-    | gateway's UAT URLs to test. Wave Money requests payments at
-    | WAVE_MONEY_BASE_URL and sends the customer to WAVE_MONEY_BASE_REDIRECT_URL.
+    | gateway's UAT URLs to test. Wave Pay requests payments at
+    | WAVE_PAY_BASE_URL and sends the customer to WAVE_PAY_BASE_REDIRECT_URL.
     |
     */
 
@@ -25,13 +25,13 @@ return [
         'time_to_live_in_minutes' => env('KBZ_PAY_TIME_TO_LIVE_IN_MINUTES'),
     ],
 
-    'wave_money' => [
-        'merchant_id' => env('WAVE_MONEY_MERCHANT_ID'),
-        'secret_key' => env('WAVE_MONEY_SECRET_KEY'),
-        'merchant_name' => env('WAVE_MONEY_MERCHANT_NAME'),
-        'time_to_live_in_seconds' => env('WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS'),
-        'base_url' => env('WAVE_MONEY_BASE_URL'),
-        'base_redirect_url' => env('WAVE_MONEY_BASE_REDIRECT_URL'),
+    'wave_pay' => [
+        'merchant_id' => env('WAVE_PAY_MERCHANT_ID'),
+        'secret_key' => env('WAVE_PAY_SECRET_KEY'),
+        'merchant_name' => env('WAVE_PAY_MERCHANT_NAME'),
+        'time_to_live_in_seconds' => env('WAVE_PAY_TIME_TO_LIVE_IN_SECONDS'),
+        'base_url' => env('WAVE_PAY_BASE_URL'),
+        'base_redirect_url' => env('WAVE_PAY_BASE_REDIRECT_URL'),
     ],
 
     'aya_pay' => [
