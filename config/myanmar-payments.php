@@ -30,7 +30,6 @@ return [
         'merchant_name' => env('WAVE_MONEY_MERCHANT_NAME'),
         'time_to_live_in_seconds' => env('WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS'),
         'base_url' => env('WAVE_MONEY_BASE_URL'),
-        'authenticate_url' => env('WAVE_MONEY_AUTHENTICATE_URL'),
     ],
 
     'aya_pay' => [

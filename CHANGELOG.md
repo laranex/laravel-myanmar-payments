@@ -15,7 +15,7 @@ The rewrite that was developed as v3 was never released; it ships as v4.0.0.
 - `MyanmarPayments::gateway($name)` and `MyanmarPayments::handleCallback($gateway, $request)` resolve a gateway by its callback route name (`kbz-pay`, `wave-money`, `aya-pay`, `yoma-mmqr`, `cyber-source`, listed by `gateways()`), so one route can serve every gateway, like goravel-myanmar-payments and nestjs-myanmar-payments
 - Added AYA `services()`, AYA `verifyRedirect()` and status checks for KBZ Pay, AYA and Yoma MMQR
 - Callback, return and cancel URLs only need to be valid absolute http or https URLs (no HTTPS-only or port-443 rule); gateways may still require HTTPS in production
-- Wave Money's UAT API is `https://preprodpayments.wavemoney.io:8107`, with checkout at `https://preprodpayments.wavemoney.io/authenticate` (set them as `WAVE_MONEY_BASE_URL` and `WAVE_MONEY_AUTHENTICATE_URL`)
+- Wave Money's UAT API is `https://preprodpayments.wavemoney.io:8107` (set it as `WAVE_MONEY_BASE_URL`); payments are requested at its `/payment` and the customer is sent to its `/authenticate`
 - Fixed callback verification for KBZ Pay, Wave Money and AYA against their official specifications
 - The facade moved from `Laranex\LaravelMyanmarPayments\LaravelMyanmarPaymentsFacade` (alias `LaravelMyanmarPayments`) to `Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments` (alias `MyanmarPayments`)
 - The service provider is now `Laranex\LaravelMyanmarPayments\MyanmarPaymentsServiceProvider` and the config file is `config/myanmar-payments.php` (publish tag `myanmar-payments-config`)
