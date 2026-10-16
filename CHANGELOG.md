@@ -15,7 +15,7 @@ The rewrite that was developed as v3 was never released; it ships as v4.0.0.
 - `MyanmarPayments::gateway($name)` and `MyanmarPayments::handleCallback($gateway, $request)` resolve a gateway by its callback route name (`kbz-pay`, `wave-pay`, `aya-pay`, `yoma-mmqr`, `cyber-source`, listed by `gateways()`), so one route can serve every gateway, like goravel-myanmar-payments and nestjs-myanmar-payments
 - Added AYA `services()`, AYA `verifyRedirect()` and status checks for KBZ Pay, AYA and Yoma MMQR
 - Callback, return and cancel URLs only need to be valid absolute http or https URLs (no HTTPS-only or port-443 rule); gateways may still require HTTPS in production
-- Wave Pay requests payments at `WAVE_PAY_BASE_URL`'s `/payment` and sends the customer to the new `WAVE_PAY_BASE_REDIRECT_URL`'s `/authenticate` (UAT: `https://preprodpayments.wavemoney.io:8107` for both), following the Pay with Wave API spec v1.3
+- Wave Pay requests payments at `WAVE_PAY_BASE_URL`'s `/payment` and sends the customer to the new `WAVE_PAY_BASE_REDIRECT_URL`'s `/authenticate` (UAT: `https://preprodpayments.wavemoney.io:8107` for both) as JSON, following the Pay with Wave API spec v1.3; `WavePayPaymentData` takes the optional `additionalField3` to `additionalField5`
 - Wave Money is now called Wave Pay: the `wave_money` config key is `wave_pay`, `waveMoney()` is `wavePay()` and its callback route name is `wave-pay`
 - Fixed callback verification for KBZ Pay, Wave Pay and AYA against their official specifications
 - The facade moved from `Laranex\LaravelMyanmarPayments\LaravelMyanmarPaymentsFacade` (alias `LaravelMyanmarPayments`) to `Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments` (alias `MyanmarPayments`)
