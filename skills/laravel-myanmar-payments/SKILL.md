@@ -38,7 +38,7 @@ Publish `config/myanmar-payments.php` only to change it, for example the auto-su
 php artisan vendor:publish --tag="myanmar-payments-config"
 ```
 
-An unconfigured gateway throws `ConfigurationException` (`gateway`, `key`) naming the missing key when first used, not at boot; so does a time setting that is not a whole number greater than 0.
+An unconfigured gateway throws `ConfigurationException` (`gateway`, `key`) naming the missing key when first used, not at boot; so does a time setting out of range (a whole number greater than 0; KBZ Pay's time to live 1 to 120).
 
 ## Use
 
