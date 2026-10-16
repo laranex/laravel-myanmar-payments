@@ -16,6 +16,7 @@ use Laranex\PhpMyanmarPayments\Exceptions\SignatureVerificationException;
 use Laranex\PhpMyanmarPayments\Http\CallbackRequest;
 use Laranex\PhpMyanmarPayments\WavePay\WavePayItem;
 use Laranex\PhpMyanmarPayments\WavePay\WavePayPaymentData;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 /**
  * @param  array<string, mixed>  $payload
@@ -114,6 +115,33 @@ it('passes framework-agnostic callback requests straight through', function () {
         ->and($converted->query)->toBe(['source' => 'yoma'])
         ->and($converted->header('x-webhook-secret'))->toBe('hook-secret')
         ->and($converted->header('Content-Type'))->toBe('application/json');
+});
+
+it('rejects callback bodies over 64 KiB with a 413, by declared and by actual size', function (array $server, string $content) {
+    try {
+        CallbackRequestFactory::make(Request::create('/callback', 'POST', server: $server + ['CONTENT_TYPE' => 'application/json'], content: $content));
+        $this->fail('Expected a 413.');
+    } catch (HttpException $e) {
+        expect($e->getStatusCode())->toBe(413)
+            ->and($e->getMessage())->toBe('The callback request body is larger than 65536 bytes.');
+    }
+})->with([
+    'declared size' => [['CONTENT_LENGTH' => '65537'], '{}'],
+    'actual size' => [['CONTENT_LENGTH' => '2'], str_repeat('a', CallbackRequestFactory::MAX_CALLBACK_BODY_BYTES + 1)],
+]);
+
+it('accepts a callback body of exactly 64 KiB', function () {
+    $body = str_repeat('a', CallbackRequestFactory::MAX_CALLBACK_BODY_BYTES);
+
+    expect(CallbackRequestFactory::MAX_CALLBACK_BODY_BYTES)->toBe(65536)
+        ->and(CallbackRequestFactory::make(Request::create('/callback', 'POST', content: $body))->body)->toBe($body);
+});
+
+it('answers an oversized callback to a route with 413', function () {
+    Route::post('/wave/callback', fn (Request $request): CallbackResponse => MyanmarPayments::acknowledge(MyanmarPayments::handleCallback('wave-pay', $request)));
+
+    $this->call('POST', '/wave/callback', server: ['CONTENT_TYPE' => 'application/json'], content: str_repeat('a', 70000))
+        ->assertStatus(413);
 });
 
 it('acknowledges callbacks with the response each gateway expects, directly from a route', function () {

@@ -19,7 +19,7 @@ Use this skill when a Laravel application starts a payment, handles a gateway ca
 composer require laranex/laravel-myanmar-payments
 ```
 
-Requires PHP 8.1+ and Laravel 10 to 13. The service provider and the `MyanmarPayments` facade are auto-discovered. Gateway calls go through Laravel's `Http` client, Yoma MMQR tokens through the cache, and auto-submit form links are encrypted with `APP_KEY`.
+Requires PHP 8.1+ and Laravel 10 to 13. The service provider and the `MyanmarPayments` facade are auto-discovered. Gateway calls go through Laravel's `Http` client, Yoma MMQR tokens through the cache, and auto-submit form links are encrypted with `APP_KEY` (needed only when a form link is built or opened).
 
 ## Configure
 
@@ -30,7 +30,7 @@ Set the env keys of the gateways you use. Every setting of those gateways is req
 - AYA Pay: `AYA_PAY_APP_KEY`, `AYA_PAY_APP_SECRET`, `AYA_PAY_BASE_URL`
 - Yoma MMQR: `YOMA_MMQR_MERCHANT_ID`, `YOMA_MMQR_CLIENT_ID`, `YOMA_MMQR_CLIENT_SECRET`, `YOMA_MMQR_WEBHOOK_HASHKEY`, `YOMA_MMQR_API_VERSION` (e.g. `v1rc`), `YOMA_MMQR_WEBHOOK_SECRET` (every callback must carry it in `X-Webhook-Secret`), `YOMA_MMQR_BASE_URL`
 - CyberSource: `CYBER_SOURCE_PROFILE_ID`, `CYBER_SOURCE_ACCESS_KEY`, `CYBER_SOURCE_SECRET_KEY`, `CYBER_SOURCE_BASE_URL`
-- Shared: optional `MYANMAR_PAYMENTS_HTTP_TIMEOUT` (seconds before a gateway call gives up, 30 by default; used by every gateway except CyberSource), `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` (minutes an auto-submit form link stays valid, required for AYA Pay and CyberSource while the form route is enabled), optional `MYANMAR_PAYMENTS_CACHE_STORE` (store for the Yoma access token, default store when empty)
+- Shared: optional `MYANMAR_PAYMENTS_HTTP_TIMEOUT` (seconds before a gateway call gives up, connecting included, 30 by default; the one timeout of every gateway except CyberSource, with no per-gateway override), `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` (minutes an auto-submit form link stays valid, required for AYA Pay and CyberSource while the form route is enabled), optional `MYANMAR_PAYMENTS_CACHE_STORE` (store for the Yoma access token, default store when empty)
 
 Publish `config/myanmar-payments.php` only to change it, for example the auto-submit form route (`form_route.enabled`, `path`, `middleware`, `ttl_minutes`):
 
@@ -71,7 +71,7 @@ return redirect()->away($payment->url);
 
 ### Form payments (AYA Pay, CyberSource)
 
-`ayaPay()->initiate()` and `cyberSource()->initiate()` return a `FormPayment` the customer's browser must POST. Redirect to `$payment->autoSubmitUrl`: a link to the package's `GET myanmar-payments/form` route, encrypted with `APP_KEY` and valid for `form_route.ttl_minutes`; a tampered or expired link answers 410. The route runs without middleware by default (no session needed), sends `Referrer-Policy: strict-origin` and adds the `Vite::useCspNonce()` nonce to its script when one is set. Or return `$payment->toHtml()` yourself.
+`ayaPay()->initiate()` and `cyberSource()->initiate()` return a `FormPayment` the customer's browser must POST. Redirect to `$payment->autoSubmitUrl`: a link to the package's `GET myanmar-payments/form` route, encrypted with `APP_KEY` and valid for `form_route.ttl_minutes`; a tampered or expired link answers 410. The route runs without middleware by default (no session needed), sends `Referrer-Policy: strict-origin` and adds the `Vite::useCspNonce()` nonce to its script when one is set. Or return `$payment->toHtml()` yourself. With `form_route.enabled` false, `autoSubmitUrl` is null and the route is not registered; while it is enabled, a missing or invalid `ttl_minutes` makes `initiate()` throw a `ConfigurationException`.
 
 AYA Pay needs a channel: list them with `MyanmarPayments::ayaPay()->services()` (each `AyaPayService` has `key` and `supports(AyaPayMethod $method)`), then:
 
@@ -114,6 +114,7 @@ Route::post('/payments/kbz/callback', function (Request $request) {
 })->name('payments.kbz.callback');
 ```
 
+- A callback body over 64 KiB (`CallbackRequestFactory::MAX_CALLBACK_BODY_BYTES`, 65536 bytes) answers 413 before verification.
 - `MyanmarPayments::acknowledge($callback)` returns the reply each gateway expects so it stops retrying; without a callback it is an empty 200.
 - One route for every gateway: `MyanmarPayments::handleCallback($gateway, $request)` with a name from `gateways()`.
 - Check AYA's browser return with `MyanmarPayments::ayaPay()->verifyRedirect($request)`; it is never proof of payment.

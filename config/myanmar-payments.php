@@ -62,9 +62,9 @@ return [
     | HTTP
     |--------------------------------------------------------------------------
     |
-    | Seconds before a gateway API call gives up, 30 by default. Used by
-    | every gateway that calls an API (all but CyberSource) as its
-    | `timeout_in_seconds`, unless the gateway sets its own.
+    | Seconds before a gateway API call gives up, connecting included, 30
+    | by default. Every gateway that calls an API (all but CyberSource)
+    | uses this one timeout.
     |
     */
 

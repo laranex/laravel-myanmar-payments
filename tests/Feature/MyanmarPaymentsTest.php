@@ -46,6 +46,24 @@ it('sends gateway calls through the Laravel HTTP client', function () {
         && $request->hasHeader('Content-Type', 'application/json'));
 });
 
+it('applies the HTTP timeout to the whole call, connecting included', function () {
+    config()->set('myanmar-payments.http.timeout', 45);
+    app()->forgetInstance(MyanmarPaymentsManager::class);
+    MyanmarPayments::clearResolvedInstances();
+    $options = [];
+
+    Http::fake(function (HttpRequest $request, array $sent) use (&$options) {
+        $options = $sent;
+
+        return Http::response(['Response' => ['result' => 'SUCCESS', 'code' => '0', 'prepay_id' => 'PREPAY1']]);
+    });
+
+    MyanmarPayments::kbzPay()->pwa(new KbzPayPaymentData('ORDER_1', 1000, 'https://shop.test/kbz/callback'));
+
+    expect($options['timeout'] ?? null)->toBe(45)
+        ->and($options['connect_timeout'] ?? null)->toBe(45);
+});
+
 it('turns connection failures into an ApiException', function () {
     Http::fake(fn () => throw new ConnectionException('Connection refused'));
 

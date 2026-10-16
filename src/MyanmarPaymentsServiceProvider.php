@@ -23,7 +23,7 @@ class MyanmarPaymentsServiceProvider extends ServiceProvider
         $this->mergeConfigFrom(__DIR__.'/../config/myanmar-payments.php', 'myanmar-payments');
 
         $this->app->singleton(FormPaymentUrl::class, fn (Container $app): FormPaymentUrl => new FormPaymentUrl(
-            $app->make(StringEncrypter::class),
+            fn (): StringEncrypter => $app->make(StringEncrypter::class),
             $app->make(UrlGenerator::class),
             $this->config($app, 'form_route.ttl_minutes'),
             (bool) $this->config($app, 'form_route.enabled', true),

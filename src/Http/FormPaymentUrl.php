@@ -4,8 +4,10 @@ declare(strict_types=1);
 
 namespace Laranex\LaravelMyanmarPayments\Http;
 
+use Closure;
 use Illuminate\Contracts\Encryption\StringEncrypter;
 use Illuminate\Contracts\Routing\UrlGenerator;
+use Illuminate\Encryption\MissingAppKeyException;
 use Illuminate\Support\Carbon;
 use Laranex\PhpMyanmarPayments\Exceptions\ConfigurationException;
 use Laranex\PhpMyanmarPayments\Results\FormPayment;
@@ -17,10 +19,12 @@ use Throwable;
 class FormPaymentUrl
 {
     /**
+     * @param  Closure(): StringEncrypter  $encrypter  Resolves the encrypter (APP_KEY) only when a link is built or read,
+     *                                                 so gateways without forms work without APP_KEY.
      * @param  mixed  $ttlMinutes  `form_route.ttl_minutes`: a whole number greater than 0, checked when a link is built.
      */
     public function __construct(
-        private readonly StringEncrypter $encrypter,
+        private readonly Closure $encrypter,
         private readonly UrlGenerator $url,
         private readonly mixed $ttlMinutes,
         private readonly bool $enabled = true,
@@ -30,6 +34,7 @@ class FormPaymentUrl
      * The payment with its `autoSubmitUrl`, or unchanged when the form route is disabled.
      *
      * @throws ConfigurationException When `form_route.ttl_minutes` is missing or not a whole number greater than 0.
+     * @throws MissingAppKeyException When APP_KEY is not set.
      */
     public function attach(FormPayment $payment): FormPayment
     {
@@ -37,24 +42,26 @@ class FormPaymentUrl
             return $payment;
         }
 
-        $payload = $this->encrypter->encryptString((string) json_encode([
+        $expiresAt = Carbon::now()->addMinutes($this->ttlMinutes())->getTimestamp();
+
+        $payload = $this->encrypter()->encryptString((string) json_encode([
             'orderId' => $payment->orderId,
             'action' => $payment->action,
             'fields' => $payment->fields,
             'enctype' => $payment->enctype,
-            'expiresAt' => Carbon::now()->addMinutes($this->ttlMinutes())->getTimestamp(),
+            'expiresAt' => $expiresAt,
         ]));
 
         return $payment->withAutoSubmitUrl($this->url->route('myanmar-payments.form', ['payload' => $payload]));
     }
 
     /**
-     * The form behind a link, or null when the link is invalid or expired.
+     * The form behind a link, or null when the link is invalid or expired (or APP_KEY is not set).
      */
     public function resolve(string $payload): ?FormPayment
     {
         try {
-            $data = json_decode($this->encrypter->decryptString($payload), true);
+            $data = json_decode($this->encrypter()->decryptString($payload), true);
         } catch (Throwable) {
             return null;
         }
@@ -72,6 +79,11 @@ class FormPaymentUrl
             fields: $fields,
             enctype: (string) ($data['enctype'] ?? 'application/x-www-form-urlencoded'),
         );
+    }
+
+    private function encrypter(): StringEncrypter
+    {
+        return ($this->encrypter)();
     }
 
     /**

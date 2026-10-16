@@ -162,8 +162,8 @@ class MyanmarPayments
     }
 
     /**
-     * A gateway's config with the shared `http.timeout` as its `timeout_in_seconds`, unless the gateway sets its own,
-     * and the SDK's default (30 seconds) when neither is set. Blank values count as unset.
+     * A gateway's config with the shared `http.timeout` as its `timeout_in_seconds`, and the SDK's default
+     * (30 seconds) when it is not set or blank. Every gateway that calls an API uses this one timeout.
      *
      * @return array<string, mixed>
      */
@@ -171,8 +171,7 @@ class MyanmarPayments
     {
         $config = $this->configFor($gateway);
         $http = $this->config['http'] ?? [];
-        $config['timeout_in_seconds'] = self::filled($config['timeout_in_seconds'] ?? null)
-            ?? self::filled(is_array($http) ? ($http['timeout'] ?? null) : null)
+        $config['timeout_in_seconds'] = self::filled(is_array($http) ? ($http['timeout'] ?? null) : null)
             ?? Payments::DEFAULT_TIMEOUT_SECONDS;
 
         return $config;

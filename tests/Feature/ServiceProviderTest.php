@@ -2,6 +2,7 @@
 
 declare(strict_types=1);
 
+use Illuminate\Encryption\MissingAppKeyException;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Vite;
 use Illuminate\Support\ServiceProvider;
@@ -79,16 +80,29 @@ it('rejects an HTTP timeout that is not a whole number greater than 0', function
     MyanmarPayments::kbzPay();
 })->with([0, '-5', 'five', '1.5'])->throws(ConfigurationException::class, 'The kbz_pay configuration [timeout_in_seconds] must be a whole number greater than 0.');
 
-it('lets a gateway set its own timeout over the shared one', function () {
+it('uses only the shared HTTP timeout, ignoring a per-gateway timeout_in_seconds', function () {
     config()->set('myanmar-payments.http.timeout', 20);
     config()->set('myanmar-payments.kbz_pay.timeout_in_seconds', '15');
-    config()->set('myanmar-payments.wave_pay.timeout_in_seconds', ' ');
     app()->forgetInstance(MyanmarPaymentsManager::class);
     MyanmarPayments::clearResolvedInstances();
 
-    expect(MyanmarPayments::kbzPay()->config->timeoutSeconds)->toBe(15)
+    expect(MyanmarPayments::kbzPay()->config->timeoutSeconds)->toBe(20)
         ->and(MyanmarPayments::wavePay()->config->timeoutSeconds)->toBe(20)
         ->and(MyanmarPayments::ayaPay()->config->timeoutSeconds)->toBe(20);
+});
+
+it('resolves APP_KEY only when a form link is built or read', function () {
+    config()->set('app.key', null);
+    app()->forgetInstance('encrypter');
+    app()->forgetInstance(FormPaymentUrl::class);
+    app()->forgetInstance(MyanmarPaymentsManager::class);
+    MyanmarPayments::clearResolvedInstances();
+
+    expect(MyanmarPayments::kbzPay()->config->appId)->toBe('kp123')
+        ->and(MyanmarPayments::wavePay()->config->merchantId)->toBe('wave')
+        ->and(MyanmarPayments::yomaMmqr()->config->merchantId)->toBe('M001')
+        ->and(app(FormPaymentUrl::class)->resolve('payload'))->toBeNull()
+        ->and(fn () => app(FormPaymentUrl::class)->attach(new FormPayment('ORDER_9', 'https://gateway.test/pay', ['amount' => '1000'])))->toThrow(MissingAppKeyException::class);
 });
 
 it('requires the gateway settings that used to have defaults', function (string $gateway, string $method, string $key) {
