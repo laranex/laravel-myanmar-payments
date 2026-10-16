@@ -19,7 +19,7 @@ The rewrite that was developed as v3 was never released; it ships as v4.0.0.
 - Fixed callback verification for KBZ Pay, Wave Money and AYA against their official specifications
 - The facade moved from `Laranex\LaravelMyanmarPayments\LaravelMyanmarPaymentsFacade` (alias `LaravelMyanmarPayments`) to `Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments` (alias `MyanmarPayments`)
 - The service provider is now `Laranex\LaravelMyanmarPayments\MyanmarPaymentsServiceProvider` and the config file is `config/myanmar-payments.php` (publish tag `myanmar-payments-config`)
-- Renamed the `aya_pgw` config key to `aya_pay` (env `AYA_PAY_*`, with `AYA_PGW_*` still read as a fallback) and KBZ Pay's `base_url` / `pwa.base_redirect_url` keys to `api_url` / `pwa_url` (env `KBZ_PAY_BASE_URL` and `KBZ_PAY_PWA_BASE_REDIRECT_URL` are unchanged)
+- Renamed the `aya_pgw` config key to `aya_pay` (env `AYA_PAY_*`; the `AYA_PGW_*` variables are no longer read) and KBZ Pay's `base_url` / `pwa.base_redirect_url` keys to `api_url` / `pwa_url` (env `KBZ_PAY_BASE_URL` and `KBZ_PAY_PWA_BASE_REDIRECT_URL` are unchanged)
 - Removed KBZ Pay's refund query (`queryOrder()` with `$refundRequestNo`); refunds are out of scope, and `kbzPay()->status($orderId)` replaces the order query
 - AYA Pay and CyberSource return a `FormPayment` with an `autoSubmitUrl` served by the package's form route (`myanmar-payments/form`, configurable under `form_route`)
 - The form route runs without middleware by default (no session is needed), sends `Referrer-Policy: strict-origin` and adds the `Vite::useCspNonce()` nonce to its script; gateway calls return redirects instead of following them
@@ -35,7 +35,7 @@ The rewrite that was developed as v3 was never released; it ships as v4.0.0.
 - Replace the `LaravelMyanmarPayments` facade (and alias) with `Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments`; call gateways through `MyanmarPayments::kbzPay()`, `waveMoney()`, `ayaPay()`, `yomaMmqr()` and `cyberSource()`.
 - Build payments from the typed data classes in `Laranex\PhpMyanmarPayments\<Gateway>\<Gateway>PaymentData` and read the typed results (`RedirectPayment`, `FormPayment`, `QrPayment`, `AppPayment`) instead of `RequestPaymentResult::$value`.
 - Pass the incoming `Illuminate\Http\Request` to `handleCallback()`, branch on `$callback->status` (`PaymentStatus`) and return `MyanmarPayments::acknowledge($callback)` from the callback route.
-- Re-publish the configuration with `php artisan vendor:publish --tag="myanmar-payments-config"` and move your credentials to the new `kbz_pay`, `wave_money`, `aya_pay`, `yoma_mmqr` and `cyber_source` keys. `AYA_PGW_*` environment variables are still read as a fallback.
+- Re-publish the configuration with `php artisan vendor:publish --tag="myanmar-payments-config"` and move your credentials to the new `kbz_pay`, `wave_money`, `aya_pay`, `yoma_mmqr` and `cyber_source` keys, and rename the `AYA_PGW_*` environment variables to `AYA_PAY_*`.
 - Rename `aya_pgw` to `aya_pay`, and `kbz_pay.base_url` / `kbz_pay.pwa.base_redirect_url` to `kbz_pay.api_url` / `kbz_pay.pwa_url`, in any published or overridden config.
 - Replace `channel('kbz_pay.*')->queryOrder()` calls with `MyanmarPayments::kbzPay()->status($orderId)`; refund lookups are no longer provided.
 - Set the newly required settings: `MYANMAR_PAYMENTS_FORM_TTL_MINUTES`, `WAVE_MONEY_MERCHANT_NAME`, `YOMA_MMQR_API_VERSION`, `YOMA_MMQR_WEBHOOK_SECRET`, the time to live settings and every gateway URL (production's, or the UAT URLs listed in the docs).

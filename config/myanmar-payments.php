@@ -35,9 +35,9 @@ return [
     ],
 
     'aya_pay' => [
-        'app_key' => env('AYA_PAY_APP_KEY', env('AYA_PGW_APP_KEY')),
-        'app_secret' => env('AYA_PAY_APP_SECRET', env('AYA_PGW_APP_SECRET')),
-        'base_url' => env('AYA_PAY_BASE_URL', env('AYA_PGW_BASE_URL')),
+        'app_key' => env('AYA_PAY_APP_KEY'),
+        'app_secret' => env('AYA_PAY_APP_SECRET'),
+        'base_url' => env('AYA_PAY_BASE_URL'),
     ],
 
     'yoma_mmqr' => [
