@@ -10,8 +10,9 @@ return [
     |--------------------------------------------------------------------------
     |
     | Only the gateways you call need settings, and every setting of those
-    | gateways is required. Each gateway uses its production endpoints; to
-    | test against UAT, set the URL overrides to the UAT URLs.
+    | gateways is required, URLs included: set production's URLs, or the
+    | gateway's UAT URLs to test. Wave Money requests payments at
+    | WAVE_MONEY_BASE_URL and sends the customer to WAVE_MONEY_BASE_REDIRECT_URL.
     |
     */
 
@@ -30,6 +31,7 @@ return [
         'merchant_name' => env('WAVE_MONEY_MERCHANT_NAME'),
         'time_to_live_in_seconds' => env('WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS'),
         'base_url' => env('WAVE_MONEY_BASE_URL'),
+        'base_redirect_url' => env('WAVE_MONEY_BASE_REDIRECT_URL'),
     ],
 
     'aya_pay' => [

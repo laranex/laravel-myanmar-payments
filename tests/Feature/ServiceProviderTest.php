@@ -17,7 +17,7 @@ it('merges the package config and lets the host application override it', functi
     expect(config('myanmar-payments.http.timeout'))->toBe(30)
         ->and(config('myanmar-payments.form_route'))->toBe(['enabled' => true, 'path' => 'myanmar-payments/form', 'middleware' => [], 'ttl_minutes' => 30])
         ->and(config('myanmar-payments.cache_store'))->toBeNull()
-        ->and(config('myanmar-payments.kbz_pay'))->toBe(['app_id' => 'kp123', 'app_key' => 'secret-key', 'merchant_code' => '100001', 'time_to_live_in_minutes' => 30]);
+        ->and(config('myanmar-payments.kbz_pay'))->toBe(['app_id' => 'kp123', 'app_key' => 'secret-key', 'merchant_code' => '100001', 'api_url' => 'https://api.kbzpay.com/payment/gateway', 'pwa_url' => 'https://wap.kbzpay.com/pgw/pwa/#/', 'time_to_live_in_minutes' => 30]);
 });
 
 it('ships no sandbox switch and no defaults for gateway settings', function () {
@@ -28,6 +28,9 @@ it('ships no sandbox switch and no defaults for gateway settings', function () {
         ->and($config['wave_money']['merchant_name'])->toBeNull()
         ->and($config['wave_money']['time_to_live_in_seconds'])->toBeNull()
         ->and($config['kbz_pay']['time_to_live_in_minutes'])->toBeNull()
+        ->and($config['kbz_pay']['api_url'])->toBeNull()
+        ->and($config['wave_money']['base_redirect_url'])->toBeNull()
+        ->and($config['yoma_mmqr']['webhook_secret'])->toBeNull()
         ->and($config['yoma_mmqr']['api_version'])->toBeNull()
         ->and($config['form_route'])->toBe(['enabled' => true, 'path' => 'myanmar-payments/form', 'middleware' => [], 'ttl_minutes' => null]);
 });
@@ -168,14 +171,14 @@ it('honors the configured ttl for form links', function () {
     $this->get((string) $url)->assertStatus(410);
 });
 
-it('passes the optional time to live settings to the SDK', function () {
+it('passes the time to live settings to the SDK, which requires them', function () {
     config()->set('myanmar-payments.kbz_pay.time_to_live_in_minutes', null);
     config()->set('myanmar-payments.wave_money.time_to_live_in_seconds', null);
     app()->forgetInstance(MyanmarPaymentsManager::class);
     MyanmarPayments::clearResolvedInstances();
 
-    expect(MyanmarPayments::kbzPay()->config->timeToLiveMinutes)->toBeNull()
-        ->and(MyanmarPayments::waveMoney()->config->timeToLiveSeconds)->toBeNull();
+    expect(fn () => MyanmarPayments::kbzPay())->toThrow(ConfigurationException::class, 'The kbz_pay configuration is missing [time_to_live_in_minutes].')
+        ->and(fn () => MyanmarPayments::waveMoney())->toThrow(ConfigurationException::class, 'The wave_money configuration is missing [time_to_live_in_seconds].');
 
     config()->set('myanmar-payments.kbz_pay.time_to_live_in_minutes', '45');
     config()->set('myanmar-payments.wave_money.time_to_live_in_seconds', '600');

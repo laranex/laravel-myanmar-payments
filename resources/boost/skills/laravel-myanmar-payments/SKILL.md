@@ -23,14 +23,13 @@ Requires PHP 8.1+ and Laravel 10 to 13. The service provider and the `MyanmarPay
 
 ## Configure
 
-Set the env keys of the gateways you use. Every gateway uses its production URLs unless you set the URL overrides (`*_BASE_URL`, `KBZ_PAY_PWA_BASE_REDIRECT_URL`) to the gateway's UAT URLs; Wave Money sends the customer to the `/authenticate` page of `WAVE_MONEY_BASE_URL`. Every other setting of those gateways is required and has no default unless marked optional below.
+Set the env keys of the gateways you use. Every setting of those gateways is required and has no default, URLs included: set production's URLs, or the gateway's UAT URLs to test. Only the shared HTTP timeout is optional.
 
-- KBZ Pay: `KBZ_PAY_APP_ID`, `KBZ_PAY_APP_KEY`, `KBZ_PAY_MERCHANT_CODE`, optional `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` (1 to 120; a payment's `timeToLiveMinutes` overrides it)
-- Wave Money: `WAVE_MONEY_MERCHANT_ID`, `WAVE_MONEY_SECRET_KEY`, `WAVE_MONEY_MERCHANT_NAME`, optional `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` (greater than 0; a payment's `timeToLiveSeconds` overrides it)
-- A payment must get a time to live from its own `timeToLiveMinutes` / `timeToLiveSeconds` or from the setting; with neither, `pwa()`, `qr()`, `app()` and Wave's `initiate()` throw `InvalidPaymentDataException` before any request.
-- AYA Pay: `AYA_PAY_APP_KEY`, `AYA_PAY_APP_SECRET` (`AYA_PGW_*` also read)
-- Yoma MMQR: `YOMA_MMQR_MERCHANT_ID`, `YOMA_MMQR_CLIENT_ID`, `YOMA_MMQR_CLIENT_SECRET`, `YOMA_MMQR_WEBHOOK_HASHKEY`, `YOMA_MMQR_API_VERSION` (e.g. `v1rc`), optional `YOMA_MMQR_WEBHOOK_SECRET`
-- CyberSource: `CYBER_SOURCE_PROFILE_ID`, `CYBER_SOURCE_ACCESS_KEY`, `CYBER_SOURCE_SECRET_KEY`
+- KBZ Pay: `KBZ_PAY_APP_ID`, `KBZ_PAY_APP_KEY`, `KBZ_PAY_MERCHANT_CODE`, `KBZ_PAY_BASE_URL`, `KBZ_PAY_PWA_BASE_REDIRECT_URL`, `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` (1 to 120; a payment's `timeToLiveMinutes` overrides it)
+- Wave Money: `WAVE_MONEY_MERCHANT_ID`, `WAVE_MONEY_SECRET_KEY`, `WAVE_MONEY_MERCHANT_NAME`, `WAVE_MONEY_BASE_URL` (payments are requested at its `/payment`), `WAVE_MONEY_BASE_REDIRECT_URL` (the customer is sent to its `/authenticate`), `WAVE_MONEY_TIME_TO_LIVE_IN_SECONDS` (greater than 0; a payment's `timeToLiveSeconds` overrides it)
+- AYA Pay: `AYA_PAY_APP_KEY`, `AYA_PAY_APP_SECRET`, `AYA_PAY_BASE_URL` (`AYA_PGW_*` also read)
+- Yoma MMQR: `YOMA_MMQR_MERCHANT_ID`, `YOMA_MMQR_CLIENT_ID`, `YOMA_MMQR_CLIENT_SECRET`, `YOMA_MMQR_WEBHOOK_HASHKEY`, `YOMA_MMQR_API_VERSION` (e.g. `v1rc`), `YOMA_MMQR_WEBHOOK_SECRET` (every callback must carry it in `X-Webhook-Secret`), `YOMA_MMQR_BASE_URL`
+- CyberSource: `CYBER_SOURCE_PROFILE_ID`, `CYBER_SOURCE_ACCESS_KEY`, `CYBER_SOURCE_SECRET_KEY`, `CYBER_SOURCE_BASE_URL`
 - Shared: optional `MYANMAR_PAYMENTS_HTTP_TIMEOUT` (seconds before a gateway call gives up, 30 by default; used by every gateway except CyberSource), `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` (minutes an auto-submit form link stays valid, required for AYA Pay and CyberSource while the form route is enabled), optional `MYANMAR_PAYMENTS_CACHE_STORE` (store for the Yoma access token, default store when empty)
 
 Publish `config/myanmar-payments.php` only to change it, for example the auto-submit form route (`form_route.enabled`, `path`, `middleware`, `ttl_minutes`):
