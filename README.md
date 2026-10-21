@@ -5,7 +5,7 @@
 [![Total Downloads](https://img.shields.io/packagist/dt/laranex/laravel-myanmar-payments.svg?style=flat-square)](https://packagist.org/packages/laranex/laravel-myanmar-payments)
 [![License](https://img.shields.io/packagist/l/laranex/laravel-myanmar-payments.svg?style=flat-square)](LICENSE.md)
 
-Laravel integration for Myanmar payment gateways: KBZ Pay, Wave Pay, AYA Pay, Yoma MMQR and CyberSource. Built on PHP Myanmar Payments. Facade and config, verified callbacks and test fakes. Built for humans and AI agents.
+Laravel integration for Myanmar payment gateways: KBZ Pay, Wave Pay, Wave Pay Mini App, AYA Pay, Yoma MMQR and CyberSource. Built on PHP Myanmar Payments. Facade and config, verified callbacks and test fakes. Built for humans and AI agents.
 
 ## Why Laravel Myanmar Payments
 
@@ -44,6 +44,7 @@ The full documentation lives at **[laranex.vercel.app/laravel-myanmar-payments](
 - [Upgrading](https://laranex.vercel.app/laravel-myanmar-payments/upgrading): upgrading from v2.2.7 to v4.0.0
 - [KBZ Pay](https://laranex.vercel.app/laravel-myanmar-payments/drivers/kbz-pay): PWA redirect, QR and in-app payments, status checks and callbacks
 - [Wave Pay](https://laranex.vercel.app/laravel-myanmar-payments/drivers/wave-pay): redirect payments with line items and callbacks
+- [Wave Pay Mini App](https://laranex.vercel.app/laravel-myanmar-payments/drivers/wave-pay-mini-app): payments inside the WavePay app, access tokens, the signed `makePayment` payload and callbacks
 - [AYA Pay](https://laranex.vercel.app/laravel-myanmar-payments/drivers/aya-pay): the AYA Payment Gateway hosted checkout, channel discovery, status checks and callbacks
 - [Yoma MMQR](https://laranex.vercel.app/laravel-myanmar-payments/drivers/yoma-mmqr): QR images, QR renewal, status checks and callbacks
 - [CyberSource](https://laranex.vercel.app/laravel-myanmar-payments/drivers/cyber-source): Secure Acceptance card payments with a signed hosted checkout form

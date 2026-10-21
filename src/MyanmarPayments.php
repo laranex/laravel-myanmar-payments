@@ -11,6 +11,7 @@ use Laranex\LaravelMyanmarPayments\Gateways\AyaPay;
 use Laranex\LaravelMyanmarPayments\Gateways\CyberSource;
 use Laranex\LaravelMyanmarPayments\Gateways\KbzPay;
 use Laranex\LaravelMyanmarPayments\Gateways\WavePay;
+use Laranex\LaravelMyanmarPayments\Gateways\WavePayMiniApp;
 use Laranex\LaravelMyanmarPayments\Gateways\YomaMmqr;
 use Laranex\LaravelMyanmarPayments\Http\CallbackResponse;
 use Laranex\LaravelMyanmarPayments\Http\FormPaymentUrl;
@@ -22,6 +23,7 @@ use Laranex\PhpMyanmarPayments\KbzPay\KbzPayConfig;
 use Laranex\PhpMyanmarPayments\MyanmarPayments as Payments;
 use Laranex\PhpMyanmarPayments\Results\PaymentCallback;
 use Laranex\PhpMyanmarPayments\WavePay\WavePayConfig;
+use Laranex\PhpMyanmarPayments\WavePayMiniApp\WavePayMiniAppConfig;
 use Laranex\PhpMyanmarPayments\YomaMmqr\YomaMmqrConfig;
 use Psr\SimpleCache\CacheInterface;
 
@@ -33,6 +35,8 @@ class MyanmarPayments
     private ?KbzPay $kbzPay = null;
 
     private ?WavePay $wavePay = null;
+
+    private ?WavePayMiniApp $wavePayMiniApp = null;
 
     private ?AyaPay $ayaPay = null;
 
@@ -78,6 +82,19 @@ class MyanmarPayments
     }
 
     /**
+     * Wave Pay Mini App: `accessToken()`, `payment()` and `handleCallback()`.
+     */
+    public function wavePayMiniApp(): WavePayMiniApp
+    {
+        if ($this->wavePayMiniApp === null) {
+            $config = WavePayMiniAppConfig::fromArray($this->apiConfigFor('wave_pay_mini_app'));
+            $this->wavePayMiniApp = new WavePayMiniApp($config, $this->httpClient($config->timeoutSeconds), $this->cache);
+        }
+
+        return $this->wavePayMiniApp;
+    }
+
+    /**
      * AYA Payment Gateway: `services()`, `initiate()`, `status()`, `handleCallback()` and `verifyRedirect()`.
      */
     public function ayaPay(): AyaPay
@@ -118,7 +135,7 @@ class MyanmarPayments
      */
     public function gateways(): array
     {
-        return ['kbz-pay', 'wave-pay', 'aya-pay', 'yoma-mmqr', 'cyber-source'];
+        return ['kbz-pay', 'wave-pay', 'wave-pay-mini-app', 'aya-pay', 'yoma-mmqr', 'cyber-source'];
     }
 
     /**
@@ -126,11 +143,12 @@ class MyanmarPayments
      *
      * @throws InvalidArgumentException for an unknown name
      */
-    public function gateway(string $name): KbzPay|WavePay|AyaPay|YomaMmqr|CyberSource
+    public function gateway(string $name): KbzPay|WavePay|WavePayMiniApp|AyaPay|YomaMmqr|CyberSource
     {
         return match ($name) {
             'kbz-pay' => $this->kbzPay(),
             'wave-pay' => $this->wavePay(),
+            'wave-pay-mini-app' => $this->wavePayMiniApp(),
             'aya-pay' => $this->ayaPay(),
             'yoma-mmqr' => $this->yomaMmqr(),
             'cyber-source' => $this->cyberSource(),
@@ -143,7 +161,8 @@ class MyanmarPayments
     }
 
     /**
-     * Verify a callback with the named gateway, e.g. in one route that serves every gateway.
+     * Verify a callback with the named gateway, e.g. in one route that serves every gateway. Wave Pay Mini App
+     * verifies against the Laravel request's own URL (scheme, host and path), the callback URL its payment was signed with.
      *
      * @throws InvalidArgumentException for an unknown name
      */

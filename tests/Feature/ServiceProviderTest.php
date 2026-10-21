@@ -33,6 +33,7 @@ it('ships no sandbox switch and no defaults for gateway settings', function () {
         ->and($config['wave_pay']['base_redirect_url'])->toBeNull()
         ->and($config['yoma_mmqr']['webhook_secret'])->toBeNull()
         ->and($config['yoma_mmqr']['api_version'])->toBeNull()
+        ->and($config['wave_pay_mini_app'])->toBe(['client_id' => null, 'client_secret' => null, 'mini_app_id' => null, 'secret_key' => null, 'base_url' => null])
         ->and($config['form_route'])->toBe(['enabled' => true, 'path' => 'myanmar-payments/form', 'middleware' => [], 'ttl_minutes' => null]);
 });
 
@@ -44,9 +45,10 @@ it('defaults the HTTP timeout to 30 seconds for every gateway that calls an API'
     expect([
         MyanmarPayments::kbzPay()->config->timeoutSeconds,
         MyanmarPayments::wavePay()->config->timeoutSeconds,
+        MyanmarPayments::wavePayMiniApp()->config->timeoutSeconds,
         MyanmarPayments::ayaPay()->config->timeoutSeconds,
         MyanmarPayments::yomaMmqr()->config->timeoutSeconds,
-    ])->toBe([30, 30, 30, 30]);
+    ])->toBe([30, 30, 30, 30, 30]);
 })->with([null, '', '   ']);
 
 it('defaults the HTTP timeout to 30 seconds without MYANMAR_PAYMENTS_HTTP_TIMEOUT', function () {
@@ -88,6 +90,7 @@ it('uses only the shared HTTP timeout, ignoring a per-gateway timeout_in_seconds
 
     expect(MyanmarPayments::kbzPay()->config->timeoutSeconds)->toBe(20)
         ->and(MyanmarPayments::wavePay()->config->timeoutSeconds)->toBe(20)
+        ->and(MyanmarPayments::wavePayMiniApp()->config->timeoutSeconds)->toBe(20)
         ->and(MyanmarPayments::ayaPay()->config->timeoutSeconds)->toBe(20);
 });
 
@@ -114,6 +117,7 @@ it('requires the gateway settings that used to have defaults', function (string 
 })->with([
     ['wave_pay', 'wavePay', 'merchant_name'],
     ['yoma_mmqr', 'yomaMmqr', 'api_version'],
+    ['wave_pay_mini_app', 'wavePayMiniApp', 'mini_app_id'],
 ])->throws(ConfigurationException::class, 'configuration is missing');
 
 it('registers the facade alias and the manager as singletons', function () {

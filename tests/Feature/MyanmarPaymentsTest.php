@@ -13,6 +13,7 @@ use Laranex\LaravelMyanmarPayments\Gateways\AyaPay;
 use Laranex\LaravelMyanmarPayments\Gateways\CyberSource;
 use Laranex\LaravelMyanmarPayments\Gateways\KbzPay;
 use Laranex\LaravelMyanmarPayments\Gateways\WavePay;
+use Laranex\LaravelMyanmarPayments\Gateways\WavePayMiniApp;
 use Laranex\LaravelMyanmarPayments\Gateways\YomaMmqr;
 use Laranex\LaravelMyanmarPayments\Http\LaravelHttpClient;
 use Laranex\LaravelMyanmarPayments\MyanmarPayments as MyanmarPaymentsManager;
@@ -24,12 +25,15 @@ use Laranex\PhpMyanmarPayments\Exceptions\ApiException;
 use Laranex\PhpMyanmarPayments\Exceptions\ConfigurationException;
 use Laranex\PhpMyanmarPayments\KbzPay\KbzPayPaymentData;
 use Laranex\PhpMyanmarPayments\Results\PaymentCallback;
+use Laranex\PhpMyanmarPayments\WavePayMiniApp\WavePayMiniAppItem;
+use Laranex\PhpMyanmarPayments\WavePayMiniApp\WavePayMiniAppPaymentData;
 use Laranex\PhpMyanmarPayments\YomaMmqr\YomaMmqrPaymentData;
 
 it('resolves every gateway through the facade', function () {
     expect(app(MyanmarPaymentsManager::class))->toBe(app(MyanmarPaymentsManager::class))
         ->and(MyanmarPayments::kbzPay())->toBeInstanceOf(KbzPay::class)
         ->and(MyanmarPayments::wavePay())->toBeInstanceOf(WavePay::class)
+        ->and(MyanmarPayments::wavePayMiniApp())->toBeInstanceOf(WavePayMiniApp::class)
         ->and(MyanmarPayments::ayaPay())->toBeInstanceOf(AyaPay::class)
         ->and(MyanmarPayments::yomaMmqr())->toBeInstanceOf(YomaMmqr::class)
         ->and(MyanmarPayments::cyberSource())->toBeInstanceOf(CyberSource::class);
@@ -120,6 +124,46 @@ it('keeps the Yoma token in the Laravel cache between requests', function () {
     MyanmarPayments::yomaMmqr()->status('1');
 
     Http::assertSentCount(3);
+});
+
+it('requests the Wave Pay Mini App access token through the HTTP client and keeps it in the Laravel cache', function () {
+    Http::preventStrayRequests();
+    Http::fake(['*/auth/v1/external-utility/token' => Http::response(['token_type' => 'Bearer', 'access_token' => 'mini-token', 'expires_in' => 300])]);
+
+    expect(MyanmarPayments::wavePayMiniApp()->accessToken())->toBe('mini-token');
+
+    app()->forgetInstance(MyanmarPaymentsManager::class);
+    MyanmarPayments::clearResolvedInstances();
+
+    expect(MyanmarPayments::wavePayMiniApp()->accessToken())->toBe('mini-token');
+
+    Http::assertSentCount(1);
+    Http::assertSent(fn (HttpRequest $request): bool => $request->url() === 'https://api.wavemoney.io:8100/auth/v1/external-utility/token'
+        && $request->method() === 'POST'
+        && $request->hasHeader('Content-Type', 'application/x-www-form-urlencoded')
+        && $request->data() === ['client_id' => 'mini-client', 'client_secret' => 'mini-client-secret', 'grant_type' => 'client_credentials']);
+});
+
+it('signs the Wave Pay Mini App payment payload without calling Wave', function () {
+    Http::preventStrayRequests();
+
+    $payment = MyanmarPayments::wavePayMiniApp()->payment(new WavePayMiniAppPaymentData(
+        orderId: 'ORDER_1',
+        callbackUrl: 'https://shop.test/payments/wave-pay-mini-app/callback',
+        items: [new WavePayMiniAppItem('Ticket', 3000), new WavePayMiniAppItem('Snack', Amount::kyat(2000))],
+        merchantReferenceId: 'ref-1',
+    ));
+
+    expect($payment->toArray())->toBe([
+        'amount' => 5000,
+        'miniAppID' => 'MINI456',
+        'merchantRefID' => 'ref-1',
+        'orderID' => 'ORDER_1',
+        'callBackUrl' => 'https://shop.test/payments/wave-pay-mini-app/callback',
+        'hashValue' => hash_hmac('sha256', '5000ORDER_1MINI456ref-1https://shop.test/payments/wave-pay-mini-app/callback', 'mini-secret'),
+        'items' => [['name' => 'Ticket', 'amount' => 3000], ['name' => 'Snack', 'amount' => 2000]],
+    ]);
+    Http::assertNothingSent();
 });
 
 it('names the missing setting when a gateway is not configured', function () {

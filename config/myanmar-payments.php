@@ -13,6 +13,9 @@ return [
     | gateways is required, URLs included: set production's URLs, or the
     | gateway's UAT URLs to test. Wave Pay requests payments at
     | WAVE_PAY_BASE_URL and sends the customer to WAVE_PAY_BASE_REDIRECT_URL.
+    | Wave Pay Mini App requests access tokens at WAVE_PAY_MINI_APP_BASE_URL
+    | (production: https://api.wavemoney.io:8100, UAT:
+    | https://preprodnewapi.wavemoney.io).
     |
     */
 
@@ -32,6 +35,14 @@ return [
         'time_to_live_in_seconds' => env('WAVE_PAY_TIME_TO_LIVE_IN_SECONDS'),
         'base_url' => env('WAVE_PAY_BASE_URL'),
         'base_redirect_url' => env('WAVE_PAY_BASE_REDIRECT_URL'),
+    ],
+
+    'wave_pay_mini_app' => [
+        'client_id' => env('WAVE_PAY_MINI_APP_CLIENT_ID'),
+        'client_secret' => env('WAVE_PAY_MINI_APP_CLIENT_SECRET'),
+        'mini_app_id' => env('WAVE_PAY_MINI_APP_MINI_APP_ID'),
+        'secret_key' => env('WAVE_PAY_MINI_APP_SECRET_KEY'),
+        'base_url' => env('WAVE_PAY_MINI_APP_BASE_URL'),
     ],
 
     'aya_pay' => [
@@ -77,8 +88,8 @@ return [
     | Cache
     |--------------------------------------------------------------------------
     |
-    | The cache store that keeps Yoma MMQR access tokens between requests.
-    | Null uses your default store.
+    | The cache store that keeps Yoma MMQR and Wave Pay Mini App access
+    | tokens between requests. Null uses your default store.
     |
     */
 

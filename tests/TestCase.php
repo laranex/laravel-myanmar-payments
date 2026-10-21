@@ -32,6 +32,7 @@ abstract class TestCase extends Orchestra
         $app['config']->set('myanmar-payments.form_route.ttl_minutes', 30);
         $app['config']->set('myanmar-payments.kbz_pay', ['app_id' => 'kp123', 'app_key' => 'secret-key', 'merchant_code' => '100001', 'api_url' => 'https://api.kbzpay.com/payment/gateway', 'pwa_url' => 'https://wap.kbzpay.com/pgw/pwa/#/', 'time_to_live_in_minutes' => 30]);
         $app['config']->set('myanmar-payments.wave_pay', ['merchant_id' => 'wave', 'secret_key' => 'wave-secret', 'merchant_name' => 'Shop', 'base_url' => 'https://payments.wavemoney.io', 'base_redirect_url' => 'https://payments.wavemoney.io', 'time_to_live_in_seconds' => 300]);
+        $app['config']->set('myanmar-payments.wave_pay_mini_app', ['client_id' => 'mini-client', 'client_secret' => 'mini-client-secret', 'mini_app_id' => 'MINI456', 'secret_key' => 'mini-secret', 'base_url' => 'https://api.wavemoney.io:8100']);
         $app['config']->set('myanmar-payments.aya_pay', ['app_key' => 'app-key', 'app_secret' => 'aya-secret', 'base_url' => 'https://pgw.ayainnovation.com']);
         $app['config']->set('myanmar-payments.yoma_mmqr', ['merchant_id' => 'M001', 'client_id' => 'client', 'client_secret' => 'secret', 'webhook_hashkey' => 'hash-key', 'webhook_secret' => 'hook-secret', 'base_url' => 'https://paymenthubapi.yomabank.com', 'api_version' => 'v1rc']);
         $app['config']->set('myanmar-payments.cyber_source', ['profile_id' => 'profile', 'access_key' => 'access', 'secret_key' => 'cs-secret', 'base_url' => 'https://secureacceptance.cybersource.com']);

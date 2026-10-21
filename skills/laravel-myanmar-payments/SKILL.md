@@ -1,7 +1,7 @@
 ---
 name: laravel-myanmar-payments
 description: >
-  Integrate Myanmar payment gateways (KBZ Pay, Wave Pay, AYA Pay, Yoma MMQR, CyberSource) in a Laravel app with laranex/laravel-myanmar-payments.
+  Integrate Myanmar payment gateways (KBZ Pay, Wave Pay, Wave Pay Mini App, AYA Pay, Yoma MMQR, CyberSource) in a Laravel app with laranex/laravel-myanmar-payments.
 license: MIT
 metadata:
   author: Nay Thu Khant
@@ -11,7 +11,7 @@ metadata:
 
 ## When to use
 
-Use this skill when a Laravel application starts a payment, handles a gateway callback or checks a payment status with KBZ Pay, Wave Pay, AYA Payment Gateway, Yoma MMQR or CyberSource. Start payments and verify callbacks with the package's typed API; never build gateway signatures by hand. The package wraps the PHP SDK `laranex/php-myanmar-payments`: payment data, results, statuses and exceptions are the SDK's classes (`Laranex\PhpMyanmarPayments\...`).
+Use this skill when a Laravel application starts a payment, handles a gateway callback or checks a payment status with KBZ Pay, Wave Pay, Wave Pay Mini App (a web page running inside the WavePay app), AYA Payment Gateway, Yoma MMQR or CyberSource. Start payments and verify callbacks with the package's typed API; never build gateway signatures by hand. The package wraps the PHP SDK `laranex/php-myanmar-payments`: payment data, results, statuses and exceptions are the SDK's classes (`Laranex\PhpMyanmarPayments\...`).
 
 ## Install
 
@@ -19,7 +19,7 @@ Use this skill when a Laravel application starts a payment, handles a gateway ca
 composer require laranex/laravel-myanmar-payments
 ```
 
-Requires PHP 8.1+ and Laravel 10 to 13. The service provider and the `MyanmarPayments` facade are auto-discovered. Gateway calls go through Laravel's `Http` client, Yoma MMQR tokens through the cache, and auto-submit form links are encrypted with `APP_KEY` (needed only when a form link is built or opened).
+Requires PHP 8.1+ and Laravel 10 to 13. The service provider and the `MyanmarPayments` facade are auto-discovered. Gateway calls go through Laravel's `Http` client, Yoma MMQR and Wave Pay Mini App tokens through the cache, and auto-submit form links are encrypted with `APP_KEY` (needed only when a form link is built or opened).
 
 ## Configure
 
@@ -27,10 +27,11 @@ Set the env keys of the gateways you use. Every setting of those gateways is req
 
 - KBZ Pay: `KBZ_PAY_APP_ID`, `KBZ_PAY_APP_KEY`, `KBZ_PAY_MERCHANT_CODE`, `KBZ_PAY_BASE_URL`, `KBZ_PAY_PWA_BASE_REDIRECT_URL`, `KBZ_PAY_TIME_TO_LIVE_IN_MINUTES` (1 to 120; a payment's `timeToLiveMinutes` overrides it)
 - Wave Pay: `WAVE_PAY_MERCHANT_ID`, `WAVE_PAY_SECRET_KEY`, `WAVE_PAY_MERCHANT_NAME`, `WAVE_PAY_BASE_URL` (payments are requested at its `/payment`), `WAVE_PAY_BASE_REDIRECT_URL` (the customer is sent to its `/authenticate`), `WAVE_PAY_TIME_TO_LIVE_IN_SECONDS` (greater than 0; a payment's `timeToLiveSeconds` overrides it)
+- Wave Pay Mini App: `WAVE_PAY_MINI_APP_CLIENT_ID`, `WAVE_PAY_MINI_APP_CLIENT_SECRET`, `WAVE_PAY_MINI_APP_MINI_APP_ID`, `WAVE_PAY_MINI_APP_SECRET_KEY`, `WAVE_PAY_MINI_APP_BASE_URL` (access tokens are requested at its `/auth/v1/external-utility/token`)
 - AYA Pay: `AYA_PAY_APP_KEY`, `AYA_PAY_APP_SECRET`, `AYA_PAY_BASE_URL`
 - Yoma MMQR: `YOMA_MMQR_MERCHANT_ID`, `YOMA_MMQR_CLIENT_ID`, `YOMA_MMQR_CLIENT_SECRET`, `YOMA_MMQR_WEBHOOK_HASHKEY`, `YOMA_MMQR_API_VERSION` (e.g. `v1rc`), `YOMA_MMQR_WEBHOOK_SECRET` (every callback must carry it in `X-Webhook-Secret`), `YOMA_MMQR_BASE_URL`
 - CyberSource: `CYBER_SOURCE_PROFILE_ID`, `CYBER_SOURCE_ACCESS_KEY`, `CYBER_SOURCE_SECRET_KEY`, `CYBER_SOURCE_BASE_URL`
-- Shared: optional `MYANMAR_PAYMENTS_HTTP_TIMEOUT` (seconds before a gateway call gives up, connecting included, 30 by default; the one timeout of every gateway except CyberSource, with no per-gateway override), `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` (minutes an auto-submit form link stays valid, required for AYA Pay and CyberSource while the form route is enabled), optional `MYANMAR_PAYMENTS_CACHE_STORE` (store for the Yoma access token, default store when empty)
+- Shared: optional `MYANMAR_PAYMENTS_HTTP_TIMEOUT` (seconds before a gateway call gives up, connecting included, 30 by default; the one timeout of every gateway except CyberSource, with no per-gateway override), `MYANMAR_PAYMENTS_FORM_TTL_MINUTES` (minutes an auto-submit form link stays valid, required for AYA Pay and CyberSource while the form route is enabled), optional `MYANMAR_PAYMENTS_CACHE_STORE` (store for the Yoma MMQR and Wave Pay Mini App access tokens, default store when empty)
 
 Publish `config/myanmar-payments.php` only to change it, for example the auto-submit form route (`form_route.enabled`, `path`, `middleware`, `ttl_minutes`):
 
@@ -42,11 +43,11 @@ An unconfigured gateway throws `ConfigurationException` (`gateway`, `key`) namin
 
 ## Use
 
-Every gateway is reached through `Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments`: `kbzPay()`, `wavePay()`, `ayaPay()`, `yomaMmqr()` and `cyberSource()`, or `gateway('kbz-pay')` by name (`gateways()` lists `kbz-pay`, `wave-pay`, `aya-pay`, `yoma-mmqr`, `cyber-source`). Each gateway is built once and reused.
+Every gateway is reached through `Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments`: `kbzPay()`, `wavePay()`, `wavePayMiniApp()`, `ayaPay()`, `yomaMmqr()` and `cyberSource()`, or `gateway('kbz-pay')` by name (`gateways()` lists `kbz-pay`, `wave-pay`, `wave-pay-mini-app`, `aya-pay`, `yoma-mmqr`, `cyber-source`). Each gateway is built once and reused.
 
 ### Amounts
 
-Pass an `int` (whole kyat) or a `Laranex\PhpMyanmarPayments\Amount` (`Amount::kyat(10000)`, `Amount::parse('10000.50')`), never a float. Only KBZ Pay (up to 2 decimals) and CyberSource accept decimals. Invalid data throws `InvalidPaymentDataException`; read the messages with `errors()`.
+Pass an `int` (whole kyat) or a `Laranex\PhpMyanmarPayments\Amount` (`Amount::kyat(10000)`, `Amount::parse('10000.50')`), never a float. Only KBZ Pay (up to 2 decimals) and CyberSource accept decimals; Wave Pay, Wave Pay Mini App, AYA Pay and Yoma MMQR take whole kyat. Invalid data throws `InvalidPaymentDataException`; read the messages with `errors()`.
 
 ### Start a payment
 
@@ -68,6 +69,26 @@ return redirect()->away($payment->url);
 - `RedirectPayment` from `kbzPay()->pwa()` and `wavePay()->initiate()`: redirect to `$payment->url`. For Wave, store `$data->merchantReferenceId` with the order. Pass `merchantName` or `timeToLiveSeconds` to `WavePayPaymentData` to override `WAVE_PAY_MERCHANT_NAME` or `WAVE_PAY_TIME_TO_LIVE_IN_SECONDS` for that one payment (the merchant name setting stays required).
 - `QrPayment` from `kbzPay()->qr()` (encode `qrString`) and `yomaMmqr()->initiate()` (`qrImage` as base64, `qrImageDataUri()`, `expiresAt`, `reference`). Renew an expired Yoma QR with `yomaMmqr()->renewQr($orderId)`.
 - `AppPayment` from `kbzPay()->app()`: return `$payment->toArray()` to the mobile app.
+
+### Wave Pay Mini App
+
+Your page runs inside the WavePay app. Give it `MyanmarPayments::wavePayMiniApp()->accessToken()` (cached; the page calls `WaveJsSDK.authModule.loginWithAccessToken(token)`; never request the token from the browser, it needs the client secret), then return the signed payment for `WaveJsSDK.paymentModule.makePayment(payload)`. No request is sent to Wave:
+
+```php
+use Laranex\LaravelMyanmarPayments\Facades\MyanmarPayments;
+use Laranex\PhpMyanmarPayments\WavePayMiniApp\WavePayMiniAppItem;
+use Laranex\PhpMyanmarPayments\WavePayMiniApp\WavePayMiniAppPaymentData;
+
+$data = new WavePayMiniAppPaymentData(
+    orderId: 'ORDER_'.$order->id,
+    callbackUrl: route('payments.wave-pay-mini-app.callback'),
+    items: [new WavePayMiniAppItem('Ticket', 5000)], // amount defaults to the items' sum
+);
+
+return response()->json(MyanmarPayments::wavePayMiniApp()->payment($data)->toArray());
+```
+
+`MiniAppPayment::toArray()` is exactly Wave's object (`amount`, `miniAppID`, `merchantRefID`, `orderID`, `callBackUrl`, `hashValue`, `items`); pass it to the page unchanged. Store `$data->merchantReferenceId` (generated when empty) with the order.
 
 ### Form payments (AYA Pay, CyberSource)
 
@@ -117,13 +138,14 @@ Route::post('/payments/kbz/callback', function (Request $request) {
 - A callback body over 64 KiB (`CallbackRequestFactory::MAX_CALLBACK_BODY_BYTES`, 65536 bytes) answers 413 before verification.
 - `MyanmarPayments::acknowledge($callback)` returns the reply each gateway expects so it stops retrying; without a callback it is an empty 200.
 - One route for every gateway: `MyanmarPayments::handleCallback($gateway, $request)` with a name from `gateways()`.
+- Wave Pay Mini App callbacks are signed with the callback URL but do not carry it: `wavePayMiniApp()->handleCallback($request)` and `handleCallback('wave-pay-mini-app', $request)` verify against the request's own URL (`$request->url()`: scheme, host and path, no query string). Behind a proxy Laravel does not trust, pass the URL the payment was signed with: `handleCallback($request, $callbackUrl)`. `successful` is `Successful`, `processing` is `Pending`, `failed` is `Failed`; `merchantRefId` is in `$callback->raw`; `acknowledge($callback)` is an empty 200.
 - Check AYA's browser return with `MyanmarPayments::ayaPay()->verifyRedirect($request)`; it is never proof of payment.
 - Yoma MMQR callbacks sign only `orderNumber` and `status` and carry no amount: match `orderNumber` to your stored order (its QR was generated for the stored amount) and, to confirm, call `MyanmarPayments::yomaMmqr()->status($reference)` with that order's QR reference (`refLabel`). The status result has no amount either, so trust your stored amount.
 - For production, store the verified call, acknowledge immediately and process it once in a queued job; the docs show this flow as app code (the package stores nothing).
 
 ### Check status and handle errors
 
-- `kbzPay()->status($orderId)`, `ayaPay()->status($orderId)` and `yomaMmqr()->status($reference)` return a `PaymentStatusResult` with `status` and `isSuccessful()`. Wave Pay and CyberSource have no status API.
+- `kbzPay()->status($orderId)`, `ayaPay()->status($orderId)` and `yomaMmqr()->status($reference)` return a `PaymentStatusResult` with `status` and `isSuccessful()`. Wave Pay, Wave Pay Mini App and CyberSource have no status API.
 - Statuses are the `PaymentStatus` enum: `Successful`, `Pending`, `Failed`, `Canceled`, `Expired`, `Unknown`.
 - Gateway errors throw `ApiException` (`gatewayCode`, `gatewayMessage`, `httpStatus`, `raw`); catch `PaymentException` for every package error.
 
@@ -149,5 +171,6 @@ Http::fake(['*/precreate' => Http::response(['Response' => [
 - Fulfilling orders from return pages or query strings; fulfill only from a verified callback or a status check.
 - Treating `Pending` or `Unknown` as paid, or skipping the amount check.
 - Passing floats as amounts.
+- Requesting the Wave Pay Mini App access token or computing its hash in the browser (both need secrets).
 - Calling Yoma `initiate()` twice for one order (use `renewQr()`), or reusing a Wave `merchantReferenceId`.
 - Putting callback routes behind CSRF verification or authentication, or the form route behind authentication; gateways and redirected browsers have no session.

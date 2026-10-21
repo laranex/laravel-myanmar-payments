@@ -33,6 +33,19 @@ function jsonCallback(string $uri, array $payload, array $headers = []): Request
 }
 
 /**
+ * A Wave Pay Mini App callback signed for the callback URL its payment used.
+ *
+ * @return array<string, string>
+ */
+function signedMiniAppCallback(string $callbackUrl, string $status = 'successful'): array
+{
+    $payload = ['merchantRefId' => 'ref-1', 'orderId' => 'ORDER_1', 'amount' => '5000', 'msisdn' => '9791009039', 'transactionId' => 'T1', 'transactionStatus' => $status];
+    $payload['hashValue'] = hash_hmac('sha256', $payload['amount'].$payload['orderId'].'MINI456'.$payload['merchantRefId'].$callbackUrl, 'mini-secret');
+
+    return $payload;
+}
+
+/**
  * @param  array<string, mixed>  $payload
  */
 function signedAyaInput(array $payload): array
@@ -55,6 +68,42 @@ it('verifies a Wave Pay callback from a Laravel request', function () {
         ->and($callback->orderId)->toBe('ORDER_1')
         ->and($callback->gatewayReference)->toBe('360')
         ->and($callback->amount)->toBe('1000');
+});
+
+it('verifies a Wave Pay Mini App callback against the URL of the route it was posted to', function () {
+    Route::post('/payments/wave-pay-mini-app/callback', function (Request $request): CallbackResponse {
+        $callback = MyanmarPayments::wavePayMiniApp()->handleCallback($request);
+
+        expect($callback->isSuccessful())->toBeTrue()
+            ->and($callback->orderId)->toBe('ORDER_1')
+            ->and($callback->gatewayReference)->toBe('T1')
+            ->and($callback->amount)->toBe('5000')
+            ->and($callback->raw['merchantRefId'])->toBe('ref-1');
+
+        return MyanmarPayments::acknowledge($callback);
+    });
+
+    $response = $this->postJson('/payments/wave-pay-mini-app/callback?attempt=1', signedMiniAppCallback('http://localhost/payments/wave-pay-mini-app/callback'));
+
+    $response->assertOk();
+    expect($response->getContent())->toBe('');
+});
+
+it('rejects a Wave Pay Mini App callback signed for another URL', function () {
+    Route::post('/payments/wave-pay-mini-app/callback', fn (Request $request): CallbackResponse => MyanmarPayments::acknowledge(MyanmarPayments::wavePayMiniApp()->handleCallback($request)));
+
+    $this->postJson('/payments/wave-pay-mini-app/callback', signedMiniAppCallback('https://shop.test/payments/wave-pay-mini-app/callback'))->assertStatus(500);
+
+    MyanmarPayments::wavePayMiniApp()->handleCallback(jsonCallback('/payments/wave-pay-mini-app/callback', signedMiniAppCallback('https://shop.test/other')), 'https://shop.test/payments/wave-pay-mini-app/callback');
+})->throws(SignatureVerificationException::class, 'Wave Pay Mini App callback hash verification failed.');
+
+it('verifies a Wave Pay Mini App callback against an explicit callback URL', function () {
+    $callbackUrl = 'https://shop.test/payments/wave-pay-mini-app/callback';
+
+    expect(MyanmarPayments::wavePayMiniApp()->handleCallback(jsonCallback('/internal/callback', signedMiniAppCallback($callbackUrl, 'PROCESSING')), $callbackUrl)->status)->toBe(PaymentStatus::Pending)
+        ->and(MyanmarPayments::wavePayMiniApp()->handleCallback(CallbackRequest::fromArray(signedMiniAppCallback($callbackUrl)), $callbackUrl)->isSuccessful())->toBeTrue()
+        ->and(fn () => MyanmarPayments::wavePayMiniApp()->handleCallback(CallbackRequest::fromArray(signedMiniAppCallback($callbackUrl))))
+        ->toThrow(InvalidArgumentException::class, 'Pass the callback URL the Wave Pay Mini App payment was signed with.');
 });
 
 it('verifies an AYA Pay callback and its browser redirect from Laravel requests', function () {
@@ -180,9 +229,10 @@ it('forwards JSON gateway requests with their headers through the HTTP client', 
 });
 
 it('resolves every gateway by its callback route name', function () {
-    expect(MyanmarPayments::gateways())->toBe(['kbz-pay', 'wave-pay', 'aya-pay', 'yoma-mmqr', 'cyber-source'])
+    expect(MyanmarPayments::gateways())->toBe(['kbz-pay', 'wave-pay', 'wave-pay-mini-app', 'aya-pay', 'yoma-mmqr', 'cyber-source'])
         ->and(MyanmarPayments::gateway('kbz-pay'))->toBe(MyanmarPayments::kbzPay())
         ->and(MyanmarPayments::gateway('wave-pay'))->toBe(MyanmarPayments::wavePay())
+        ->and(MyanmarPayments::gateway('wave-pay-mini-app'))->toBe(MyanmarPayments::wavePayMiniApp())
         ->and(MyanmarPayments::gateway('aya-pay'))->toBe(MyanmarPayments::ayaPay())
         ->and(MyanmarPayments::gateway('yoma-mmqr'))->toBe(MyanmarPayments::yomaMmqr())
         ->and(MyanmarPayments::gateway('cyber-source'))->toBe(MyanmarPayments::cyberSource());
@@ -190,7 +240,7 @@ it('resolves every gateway by its callback route name', function () {
 
 it('rejects an unknown gateway name', function () {
     MyanmarPayments::gateway('paypal');
-})->throws(InvalidArgumentException::class, 'Unknown payment gateway [paypal]; use one of kbz-pay, wave-pay, aya-pay, yoma-mmqr, cyber-source.');
+})->throws(InvalidArgumentException::class, 'Unknown payment gateway [paypal]; use one of kbz-pay, wave-pay, wave-pay-mini-app, aya-pay, yoma-mmqr, cyber-source.');
 
 it('verifies a callback by gateway name from one route for every gateway', function () {
     $payload = ['orderNumber' => 'ORDER_7', 'status' => 'SUCCESS', 'hashValue' => hash_hmac('sha256', 'orderNumber=ORDER_7&status=SUCCESS', 'ORDER_7hash-key')];
@@ -205,6 +255,11 @@ it('verifies a callback by gateway name from one route for every gateway', funct
         ->and($callback->isSuccessful())->toBeTrue();
 
     $this->postJson('/webhooks/payments/wave-pay', $payload)->assertStatus(500);
+
+    $this->postJson('/webhooks/payments/wave-pay-mini-app', signedMiniAppCallback('http://localhost/webhooks/payments/wave-pay-mini-app'))
+        ->assertOk()
+        ->assertContent('');
+    $this->postJson('/webhooks/payments/wave-pay-mini-app', signedMiniAppCallback('http://localhost/webhooks/payments/wave-pay'))->assertStatus(500);
 });
 
 it('acknowledges with an empty 200 without a callback', function () {
