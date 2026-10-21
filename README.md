@@ -7,15 +7,15 @@
 
 Laravel integration for Myanmar payment gateways: KBZ Pay, Wave Pay, Wave Pay Mini App, AYA Pay, Yoma MMQR and CyberSource. Built on PHP Myanmar Payments. Facade and config, verified callbacks and test fakes. Built for humans and AI agents.
 
+Every Myanmar payment gateway signs, sends and acknowledges payments its own way, with its own rules for amounts. Laravel Myanmar Payments puts KBZ Pay, Wave Pay, Wave Pay Mini App, AYA Pay, Yoma MMQR and CyberSource behind one facade. All gateway logic lives in [PHP Myanmar Payments](https://laranex.vercel.app/php-myanmar-payments/introduction); this package wires it into Laravel.
+
 ## Why Laravel Myanmar Payments
 
-Every Myanmar payment gateway signs, sends and acknowledges payments its own way, with its own rules for amounts. Laravel Myanmar Payments puts KBZ Pay, Wave Pay, AYA Pay, Yoma MMQR and CyberSource behind one facade. All gateway logic lives in [PHP Myanmar Payments](https://laranex.vercel.app/php-myanmar-payments/introduction); this package wires it into Laravel.
-
-- **One facade, every gateway.** `MyanmarPayments::kbzPay()`, `wavePay()`, `ayaPay()`, `yomaMmqr()` and `cyberSource()`, configured from environment variables.
-- **A typed result for each flow.** Every payment returns a `RedirectPayment`, `FormPayment`, `QrPayment` or `AppPayment`, so you always know what to do next. See [Payment Flows](https://laranex.vercel.app/laravel-myanmar-payments/payment-flows).
+- **One facade, every gateway.** `MyanmarPayments::kbzPay()`, `wavePay()`, `wavePayMiniApp()`, `ayaPay()`, `yomaMmqr()` and `cyberSource()`, configured from environment variables.
+- **A typed result for each flow.** Every payment returns a `RedirectPayment`, `FormPayment`, `QrPayment`, `AppPayment` or `MiniAppPayment`, so you always know what to do next. See [Payment Flows](https://laranex.vercel.app/laravel-myanmar-payments/payment-flows).
 - **Exact amounts.** Plain integers or `Amount` values, never floats, checked against each gateway's documented rules before any request is sent.
 - **Verified callbacks.** `handleCallback($request)` checks the gateway's signature against the exact body it sent and maps its status onto one `PaymentStatus` enum; `acknowledge($callback)` returns the response the gateway expects.
-- **Laravel all the way down.** Gateway calls go through the `Http` client, Yoma MMQR tokens are shared through your cache store, and AYA Pay and CyberSource checkout forms open from an encrypted link.
+- **Laravel all the way down.** Gateway calls go through the `Http` client, Yoma MMQR and Wave Pay Mini App tokens are shared through your cache store, and AYA Pay and CyberSource checkout forms open from an encrypted link.
 - **Easy to test.** `Http::fake()` sees every gateway call, the facade can be mocked, and signed callbacks can be posted to your own routes. See [Testing](https://laranex.vercel.app/laravel-myanmar-payments/testing).
 - **Your webhooks, your storage.** The package never stores webhooks; the docs show the recommended store, acknowledge and process-once flow as sample code. See [Handling Webhooks](https://laranex.vercel.app/laravel-myanmar-payments/webhooks).
 - **Ready for AI agents.** An agent skill, installed by Laravel Boost or `npx skills add`, teaches coding agents to use the package correctly.
