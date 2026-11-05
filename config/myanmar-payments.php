@@ -40,7 +40,7 @@ return [
     'wave_pay_mini_app' => [
         'client_id' => env('WAVE_PAY_MINI_APP_CLIENT_ID'),
         'client_secret' => env('WAVE_PAY_MINI_APP_CLIENT_SECRET'),
-        'mini_app_id' => env('WAVE_PAY_MINI_APP_MINI_APP_ID'),
+        'mini_app_id' => env('WAVE_PAY_MINI_APP_APP_ID'),
         'secret_key' => env('WAVE_PAY_MINI_APP_SECRET_KEY'),
         'base_url' => env('WAVE_PAY_MINI_APP_BASE_URL'),
     ],
