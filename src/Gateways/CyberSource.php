@@ -27,11 +27,11 @@ class CyberSource extends BaseCyberSource
     }
 
     /**
-     * Sign the payment. Redirect the customer to `$payment->autoSubmitUrl`.
+     * Sign the Secure Acceptance Hosted Checkout payment. Redirect the customer to `$payment->autoSubmitUrl`.
      */
-    public function initiate(CyberSourcePaymentData $data): FormPayment
+    public function hostedCheckout(CyberSourcePaymentData $data): FormPayment
     {
-        return $this->formPaymentUrl->attach(parent::initiate($data));
+        return $this->formPaymentUrl->attach(parent::hostedCheckout($data));
     }
 
     public function handleCallback(CallbackRequest|Request $request): PaymentCallback

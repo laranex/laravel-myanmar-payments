@@ -132,8 +132,8 @@ it('verifies a Yoma MMQR callback, including its secret header, from a Laravel r
     MyanmarPayments::yomaMmqr()->handleCallback(jsonCallback('/yoma/callback', $payload, ['X-Webhook-Secret' => 'wrong']));
 })->throws(SignatureVerificationException::class, 'X-Webhook-Secret');
 
-it('verifies a CyberSource result post from a Laravel request and attaches the form link on initiate', function () {
-    $payment = MyanmarPayments::cyberSource()->initiate(new CyberSourcePaymentData(orderId: 'ORDER-1', amount: 1000, callbackUrl: 'https://shop.test/cs/callback', currency: 'MMK', transactionType: CyberSourceTransactionType::Sale, locale: 'en-us'));
+it('verifies a CyberSource result post from a Laravel request and attaches the form link on hostedCheckout', function () {
+    $payment = MyanmarPayments::cyberSource()->hostedCheckout(new CyberSourcePaymentData(orderId: 'ORDER-1', amount: 1000, callbackUrl: 'https://shop.test/cs/callback', currency: 'MMK', transactionType: CyberSourceTransactionType::Sale, locale: 'en-us'));
 
     expect($payment->autoSubmitUrl)->toStartWith('http://localhost/myanmar-payments/form?payload=')
         ->and($payment->fields['reference_number'])->toBe('ORDER-1');

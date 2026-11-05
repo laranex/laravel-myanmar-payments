@@ -121,7 +121,7 @@ class MyanmarPayments
     }
 
     /**
-     * CyberSource Secure Acceptance: `initiate()` and `handleCallback()`.
+     * CyberSource Secure Acceptance Hosted Checkout: `hostedCheckout()` and `handleCallback()`.
      */
     public function cyberSource(): CyberSource
     {
