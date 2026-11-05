@@ -113,7 +113,7 @@ $payment = MyanmarPayments::ayaPay()->initiate($data);
 return redirect($payment->autoSubmitUrl);
 ```
 
-`CyberSourcePaymentData` requires `currency`, `transactionType` and `locale`, e.g. `'MMK'`, `CyberSourceTransactionType::Sale` and `'en-us'`.
+`CyberSourcePaymentData` requires `currency`, `transactionType` and `locale`, e.g. `'MMK'`, `CyberSourceTransactionType::Sale` and `'en-us'`. `orderId` is at most 40 characters; an unset `returnUrl` or `cancelUrl` is left out of the form.
 
 ### Handle the callback
 
