@@ -41,7 +41,8 @@
     },
     "require-dev": {
         "larastan/larastan": "^2.11||^3.9",
-        "laravel/pint": "^1.20||^1.29",
+        "laravel/pint": "^1.20,!=1.32.2||^1.29,!=1.32.2",
+        "orchestra/canvas-core": "^8.0||^9.0||>=10.0.0 <10.1.0||^10.1.2||^11.0",
         "orchestra/testbench": "^8.29||^9.7||^10.0||^11.0",
         "pestphp/pest": "^2.36||^3.0||^4.6",
         "pestphp/pest-plugin-type-coverage": "^2.8.7||^3.6.1||^4.0",
